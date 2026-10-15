@@ -30,5 +30,5 @@ const server=http.createServer(async(req,res)=>{try{
  res.writeHead(200,{'Content-Type':types[path.extname(file)]||'application/octet-stream','Cache-Control':'no-cache','X-Content-Type-Options':'nosniff'});res.end(req.method==='HEAD'?undefined:bytes);
  }catch(e){send(res,e.status||400,{error:e.message})}});
 server.on('error',e=>{console.error(e.code==='EADDRINUSE'?`端口 ${port} 已占用，请关闭旧工作台后重试，或指定 PORT。`:e.message);store.close();process.exit(1)});
-server.listen(port,'127.0.0.1',()=>console.log(`洋葱直播工作台 http://127.0.0.1:${port}\n文稿保存在 ${dataDir}，不会上传 GitLab。`));
+server.listen(port,'127.0.0.1',()=>console.log(`洋葱学园直播工作台 http://127.0.0.1:${port}\n文稿保存在 ${dataDir}，不会上传 GitLab。`));
 for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>server.close(()=>{store.close();process.exit(0)}));
