@@ -7,5 +7,4 @@ for(const args of [['run','check'],['run','build']]){const r=spawnSync('npm',arg
 git('add','app','lib','public/deck.css','public/favicon.svg','scripts','tests','docs','README.md','AGENTS.md','package.json','package-lock.json','tsconfig.json','vite.config.ts','index.html','server.mjs','.gitignore','.npmrc','.nvmrc','启动工作台.command');
 const guard=spawnSync(process.execPath,['scripts/guard.mjs','--staged'],{stdio:'inherit'});if(guard.status)process.exit(guard.status);
 if(git('diff','--cached','--name-only'))git('commit','-m',message);
-execFileSync('git',['push','-u','origin',branch,'-o','merge_request.create','-o','merge_request.target=main'],{stdio:'inherit'});
-console.log('功能分支已同步，并请求 GitLab 建立合并请求；请核验远端返回的合并请求地址。没有自动合并 main。');
+const merged=spawnSync(process.execPath,['scripts/merge-main.mjs'],{stdio:'inherit'});process.exit(merged.status||0);
