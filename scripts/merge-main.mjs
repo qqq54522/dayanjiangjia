@@ -7,7 +7,7 @@ if(git('remote','get-url','origin')!=='git@gitlab.yc345.tv:linfeng/onion-deck-st
 const head=git('rev-parse','HEAD');
 git('fetch','origin','main');
 if(spawnSync('git',['merge-base','--is-ancestor','origin/main',head]).status!==0)throw Error('main 已有其他更新。请让 Codex 合并最新 main、处理冲突并重新测试，再同步；不会强推');
-for(const task of ['guard','check','build']){const r=spawnSync('npm',['run',task],{stdio:'inherit'});if(r.status)process.exit(r.status||1)}
+for(const task of ['guard','test:acceptance']){const r=spawnSync('npm',['run',task],{stdio:'inherit'});if(r.status)process.exit(r.status||1)}
 // Normal push rejects a concurrent main update. Never force or change protection.
 execFileSync('git',['push','origin',`${head}:refs/heads/main`],{stdio:'inherit'});
 const remote=git('ls-remote','origin','refs/heads/main').split(/\s/)[0];

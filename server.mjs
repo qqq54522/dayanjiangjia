@@ -1,33 +1,45 @@
 import http from 'node:http';
-import {readFileSync,existsSync,mkdirSync} from 'node:fs';
+import {readFileSync,existsSync,mkdirSync,statSync,createReadStream} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {openStore} from './lib/store.mjs';
-import {pack,unpack,saveImage} from './lib/transfer.mjs';
+import {FONTS,fontCSS} from './lib/fonts.mjs';
+import {pack,unpack,saveMedia} from './lib/transfer.mjs';
 const root=path.dirname(fileURLToPath(import.meta.url));const port=Number(process.env.PORT||8788);const dataDir=path.resolve(process.env.DECK_DATA_DIR||path.join(root,'.local'));
+const fontDir=path.join(dataDir,'fonts');
 const mediaDir=path.join(dataDir,'media');mkdirSync(mediaDir,{recursive:true});const store=openStore(dataDir);
 const send=(res,status,data)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(data))};
-const body=async req=>{let size=0;const chunks=[];for await(const b of req){size+=b.length;if(size>100*1024*1024)throw Object.assign(Error('文件超过 100 MB'),{status:413});chunks.push(b)}return JSON.parse(Buffer.concat(chunks).toString())};
+const raw=async(req,limit=Infinity)=>{let size=0;const chunks=[];for await(const b of req){size+=b.length;if(size>limit)throw Object.assign(Error('上传文件超过大小限制'),{status:413});chunks.push(b)}return Buffer.concat(chunks)};
+const body=async req=>JSON.parse((await raw(req,10*1024*1024)).toString());
 const server=http.createServer(async(req,res)=>{try{
  const allowed=new Set([`127.0.0.1:${port}`,`localhost:${port}`]);if(!allowed.has(req.headers.host))return send(res,403,{error:'仅允许本机访问'});
  if(req.headers.origin&&!['http://127.0.0.1:'+port,'http://localhost:'+port].includes(req.headers.origin))return send(res,403,{error:'不接受跨站请求'});
  const url=new URL(req.url,'http://127.0.0.1:'+port);
- if(!['GET','HEAD'].includes(req.method)&&!req.headers['content-type']?.startsWith('application/json'))return send(res,415,{error:'需要 JSON 请求'});
+ if(!['GET','HEAD'].includes(req.method)&&!(req.headers['content-type']?.startsWith('application/json')||(['/api/media','/api/import'].includes(url.pathname)&&['application/zip','application/octet-stream','video/mp4'].includes(req.headers['content-type']))))return send(res,415,{error:'需要 JSON 请求'});
  if(url.pathname==='/api/identity')return send(res,200,{app:'onion-deck-studio',version:1});
  if(url.pathname==='/api/workspace'&&req.method==='GET')return send(res,200,store.read());
  if(url.pathname==='/api/workspace'&&req.method==='PUT'){const b=await body(req);return send(res,200,store.save(b.data,b.revision))}
  if(url.pathname==='/api/proposals'&&req.method==='POST')return send(res,200,store.propose(await body(req)));
- if(url.pathname==='/api/export'&&req.method==='GET')return send(res,200,pack(store.read().data,mediaDir));
- if(url.pathname==='/api/import'&&req.method==='POST')return send(res,200,{data:unpack(await body(req),mediaDir)});
- if(url.pathname==='/api/media'&&req.method==='POST'){const b=await body(req);if(typeof b.base64!=='string')throw Error('缺少图片');return send(res,200,{url:saveImage(mediaDir,Buffer.from(b.base64,'base64'))})}
+ if(url.pathname==='/api/export'&&req.method==='GET'){const zip=pack(store.read().data,mediaDir,fontDir);res.writeHead(200,{'Content-Type':'application/zip','Content-Disposition':'attachment; filename=deck.deck.zip','Cache-Control':'no-store'});return res.end(zip)}
+ if(url.pathname==='/api/import'&&req.method==='POST')return send(res,200,{data:unpack(await raw(req),mediaDir,fontDir)});
+ if(url.pathname==='/api/media'&&req.method==='POST'){return send(res,200,{url:saveMedia(mediaDir,await raw(req))})}
  if(url.pathname.startsWith('/api/'))return send(res,404,{error:'未找到接口'});
  if(!['GET','HEAD'].includes(req.method))return send(res,405,{error:'不支持此操作'});
+ if(url.pathname==='/fonts.css'){res.writeHead(200,{'Content-Type':'text/css'});return res.end(fontCSS())}
  let file;
+ if(url.pathname.startsWith('/fonts/')){const name=path.basename(url.pathname);if(!FONTS.some(f=>f.name===name))return send(res,404,{error:'无此字体'});file=path.join(fontDir,name)}
+ else
  if(url.pathname.startsWith('/media/')){if(!/^\/media\/[\w.-]+$/.test(url.pathname))return send(res,404,{error:'无此素材'});file=path.join(mediaDir,path.basename(url.pathname))}
  else{const relative=decodeURIComponent(url.pathname);const dist=path.join(root,'dist');file=path.resolve(dist,'.'+relative);if(!file.startsWith(dist+path.sep)&&file!==dist)return send(res,403,{error:'拒绝访问'});if(relative==='/')file=path.join(dist,'index.html')}
  if(!existsSync(file))return send(res,404,{error:'文件不存在，请先运行 npm run setup'});
- const bytes=readFileSync(file);const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.gif':'image/gif','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.svg':'image/svg+xml'};
- res.writeHead(200,{'Content-Type':types[path.extname(file)]||'application/octet-stream','Cache-Control':'no-cache','X-Content-Type-Options':'nosniff'});res.end(req.method==='HEAD'?undefined:bytes);
+ const size=statSync(file).size;const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.gif':'image/gif','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.svg':'image/svg+xml','.mp4':'video/mp4','.ttf':'font/ttf'};
+ if(path.extname(file)==='.mp4'&&req.headers.range){
+ const m=/^bytes=(\d*)-(\d*)$/.exec(req.headers.range);let start=0,end=size-1;
+ if(m){if(!m[1])start=Math.max(0,size-Number(m[2]));else {start=Number(m[1]);if(m[2])end=Math.min(end,Number(m[2]));}}
+ if(!m||(!m[1]&&!m[2])||start>end||start>=size){res.writeHead(416,{'Content-Range':'bytes */'+size});return res.end()}
+ res.writeHead(206,{'Content-Type':'video/mp4','Accept-Ranges':'bytes','Content-Range':`bytes ${start}-${end}/${size}`,'Content-Length':end-start+1});if(req.method==='HEAD')return res.end();return createReadStream(file,{start,end}).on('error',()=>res.destroy()).pipe(res);
+ }
+ res.writeHead(200,{'Accept-Ranges':'bytes','Content-Length':size,'Content-Type':types[path.extname(file)]||'application/octet-stream','Cache-Control':'no-cache','X-Content-Type-Options':'nosniff'});if(req.method==='HEAD')return res.end();createReadStream(file).on('error',()=>res.destroy()).pipe(res);
  }catch(e){send(res,e.status||400,{error:e.message})}});
 server.on('error',e=>{console.error(e.code==='EADDRINUSE'?`端口 ${port} 已占用，请关闭旧工作台后重试，或指定 PORT。`:e.message);store.close();process.exit(1)});
 server.listen(port,'127.0.0.1',()=>console.log(`洋葱学园直播工作台 http://127.0.0.1:${port}\n文稿保存在 ${dataDir}，不会上传 GitLab。`));

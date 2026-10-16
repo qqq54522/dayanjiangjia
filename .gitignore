@@ -26,3 +26,8 @@ work/
 *.key
 .DS_Store
 *.tsbuildinfo
+
+*.deck.zip
+*.ttf
+*.otf
+*.woff*

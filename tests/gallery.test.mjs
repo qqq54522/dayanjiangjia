@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {initGallery} from '../lib/gallery.ts';
 function fixture(){
  const images=[{src:'one.gif'},{src:'two.png'},{src:'three.png'}],counts=[{},{}],large={};
- const dialog={open:false,querySelector:()=>large,showModal(){this.open=true},close(){this.open=false}};
+ const dialog={open:false,classList:{toggle(){}},addEventListener(){},removeEventListener(){},querySelector:s=>s==='img'?large:null,showModal(){this.open=true},close(){this.open=false}};
  const listeners=new Map();
  const root={querySelectorAll:s=>s.includes('img')?images:counts,querySelector:()=>dialog,addEventListener:(t,f)=>listeners.set(t,f),removeEventListener:t=>listeners.delete(t)};
  const clean=initGallery(root);

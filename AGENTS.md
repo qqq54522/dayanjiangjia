@@ -19,9 +19,9 @@
 5. 本地 CLI 调用的是本机服务，不是大模型。推理在当前用户的 Codex 会话进行，遵循其套餐与额度。
 
 ## 文稿交换
-- 网页“版本 → 导出文稿包（含图片/GIF）”，生成 `.deck.json`，由用户通过内部飞书发送。
+- 网页“版本 → 导出 ZIP 文稿包（含全部素材）”，生成 `.deck.zip`，由用户通过内部飞书发送。
 - 对方“版本 → 导入文稿包”，检查后保存。导入覆盖当前草稿，先导出原稿；服务也会保存每次写入前的本地备份。
-- CLI：`npm run workspace -- export exports/讲品稿.deck.json`；用户明确要求导入时可 `npm run workspace -- import imports/讲品稿.deck.json`。
+- CLI：`npm run workspace -- export exports/讲品稿.deck.zip`；用户明确要求导入时可 `npm run workspace -- import imports/讲品稿.deck.zip`。
 - 一份文稿包包含完整反馈、讲述提示和版本。只需对外播放时导出 HTML，HTML 不含内部备注与反馈。
 - 外部 HTTPS 图片导出便携包前须由用户或 Codex 下载并通过网页上传。不得在源代码里内嵌用户素材。
 
@@ -34,3 +34,8 @@
 6. 用户已授权：工具修改检查通过后默认合并 main，由 Codex 完成检查，不要求用户审代码或再次确认。main 有其他更新时由 Codex 合并、解决冲突并重新验证，不强推；权限或保护策略拒绝时报告，不修改保护设置。对方随后在干净 main 上更新。不要后台定时拉取或覆盖正在编辑的文件。
 7. 仅允许工具代码、通用空白模板、脚本和说明进仓库。严禁 `.local`、文稿、图片/GIF、录屏、导出 HTML、反馈、凭证、数据库、私人路径进 Git。
 8. 提交前必须运行 `npm run precommit`；检查 `git diff --cached`。路径检查不能替代人工检查代码中是否误粘贴业务文稿或密钥。不要使用 `git add .` / `git add -A`。
+
+## 自动验收与暂存
+- 每次修改执行 npm run test:acceptance，覆盖类型、单元回归、构建与隔离 HTTP 测试。具体新增行为补对应测试。
+- 用户说暂不合并时，不运行 share-code 或 merge-main；保留在功能分支，等待后续指令。
+- 字体使用原始阿里普惠体2.0四字重，保存在 .local/fonts，不提交字体二进制或业务素材。
