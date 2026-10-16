@@ -10,5 +10,5 @@ export const designGuide=`designJson 为 null 时使用公司模板。自由改�
 节点：{type:"group"|"text"|"media"|"shape",style?:CSS样式对象,bind?:字符串,mediaIndex?:数字,children?:节点数组}。
 text只绑定title、subtitle、points、points.0、points.1等，内容写在页面对应字段，不能在设计树中另藏文字。points绑定会依次显示全部要点。group用于自由嵌套布局，shape用于纯装饰。media保留图片/GIF/视频的播放与放大，默认整组轮播；mediaIndex为0时展示首个素材，1为第二个，以此类推。
 CSS键用camelCase，值必须是字符串。可用属性：${[...properties].join(', ')}。支持flex/grid/absolute、渐变、阴影、几何图形、任意颜色、字号和间距，不局限于三种配色或四种模板。禁止url、脚本、HTML、外链、fixed/sticky；不需要它们也能完整排版。
-画布16:9，尺寸用百分比或cqw（1cqw=画布宽度1%），避免px/vw/vh以便预览缩放。根布局已铺满画布；上方留约12%给公司Logo（始终左上方，带浅色底），下方留7%给页码；主要内容使用top:15%、height:75%或根padding:"9cqw 5cqw 5cqw"。设计root默认淡底，style可以自定义background。字体由工作台固定阿里普惠体，字重只用400/500/800/900。每个media节点需要明确高度或flex/grid可分配的高度，媒体自动保留原比例。标题推荐4-6cqw、正文2-3cqw。所有重要信息应完整在画布内，保证直播可读性。
+画布16:9，尺寸用百分比或cqw（1cqw=画布宽度1%），避免px/vw/vh以便预览缩放。根布局已铺满画布；上方留约12%给公司Logo（始终左上方，根据背景自动切换黑字或白字；该区域不要叠加装饰块或图片），下方留7%给页码；主要内容使用top:15%、height:75%或根padding:"9cqw 5cqw 5cqw"。设计root默认淡底，style可以自定义background。字体由工作台固定阿里普惠体，字重只用400/500/800/900。每个media节点需要明确高度或flex/grid可分配的高度，媒体自动保留原比例。标题推荐4-6cqw、正文2-3cqw。所有重要信息应完整在画布内，保证投屏可读性。
 `;

@@ -48,5 +48,5 @@ const server=http.createServer(async(req,res)=>{try{
  res.writeHead(200,{'Accept-Ranges':'bytes','Content-Length':size,'Content-Type':types[path.extname(file)]||'application/octet-stream','Cache-Control':'no-cache','X-Content-Type-Options':'nosniff'});if(req.method==='HEAD')return res.end();createReadStream(file).on('error',()=>res.destroy()).pipe(res);
  }catch(e){send(res,e.status||400,{error:e.message})}});
 server.on('error',e=>{console.error(e.code==='EADDRINUSE'?`端口 ${port} 已占用，请关闭旧工作台后重试，或指定 PORT。`:e.message);store.close();process.exit(1)});
-server.listen(port,'127.0.0.1',()=>console.log(`洋葱学园直播工作台 http://127.0.0.1:${port}\n文稿保存在 ${dataDir}，不会上传 GitLab。`));
+server.listen(port,'127.0.0.1',()=>console.log(`洋葱学园演示工作台 http://127.0.0.1:${port}\n文稿保存在 ${dataDir}，不会上传 GitLab。`));
 for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>{codex.close();server.close(()=>{store.close();process.exit(0)})});
