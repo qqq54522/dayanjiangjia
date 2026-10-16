@@ -40,6 +40,16 @@ export function initGallery(root: HTMLElement) {
     if (action === 'prev') show(-1);
     if (action === 'next') show(1);
   };
+  let lastTap={time:0,x:0,y:0},lastToggle=0;
+  const toggleVideo=(e:Event)=>{if(!(e.target as Element)?.closest?.('video'))return;e.stopPropagation();e.preventDefault();if(Date.now()-lastToggle<450)return;lastToggle=Date.now();if(dialog.open){closeVideo();dialog.close()}else{pause();syncModal();dialog.showModal()}};
+  let touchDown:{x:number;y:number}|null=null;
+  const videoDown=(e:PointerEvent)=>{if(e.pointerType==='touch'&&(e.target as Element)?.closest?.('video'))touchDown={x:e.clientX,y:e.clientY};else touchDown=null;};
+  const videoUp=(e:PointerEvent)=>{if(!touchDown||e.pointerType!=='touch')return;const moved=Math.hypot(e.clientX-touchDown.x,e.clientY-touchDown.y);touchDown=null;if(moved>12){lastTap.time=0;return}const now=Date.now();if(now-lastTap.time<350&&Math.hypot(e.clientX-lastTap.x,e.clientY-lastTap.y)<30){toggleVideo(e);lastTap.time=0}else lastTap={time:now,x:e.clientX,y:e.clientY};};
+  const videoCancel=()=>{touchDown=null;lastTap.time=0};
+  root.addEventListener('dblclick',toggleVideo);
+  root.addEventListener('pointerdown',videoDown);
+  root.addEventListener('pointerup',videoUp);
+  root.addEventListener('pointercancel',videoCancel);
   const keys = (event: KeyboardEvent) => {
     event.stopPropagation();
     if((event.target as Element)?.closest?.('video'))return;
@@ -87,5 +97,5 @@ export function initGallery(root: HTMLElement) {
   dialog.addEventListener('close',closeVideo);
   dialog.addEventListener('cancel',closeVideo);
   show(0);
-  return () => { pause();enlargedVideo?.pause();dialog.close();dialog.removeEventListener('close',closeVideo);dialog.removeEventListener('cancel',closeVideo);root.removeEventListener('play',onPlay,true);root.removeEventListener('error',onError,true);root.removeEventListener('click', click); root.removeEventListener('keydown', keys); root.removeEventListener('touchstart', begin); root.removeEventListener('touchmove', move); root.removeEventListener('touchend', end); root.removeEventListener('touchcancel', cancel); };
+  return () => { root.removeEventListener('dblclick',toggleVideo);root.removeEventListener('pointerdown',videoDown);root.removeEventListener('pointerup',videoUp);root.removeEventListener('pointercancel',videoCancel);pause();enlargedVideo?.pause();dialog.close();dialog.removeEventListener('close',closeVideo);dialog.removeEventListener('cancel',closeVideo);root.removeEventListener('play',onPlay,true);root.removeEventListener('error',onError,true);root.removeEventListener('click', click); root.removeEventListener('keydown', keys); root.removeEventListener('touchstart', begin); root.removeEventListener('touchmove', move); root.removeEventListener('touchend', end); root.removeEventListener('touchcancel', cancel); };
 }
