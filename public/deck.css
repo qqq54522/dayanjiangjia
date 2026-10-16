@@ -63,3 +63,10 @@
 .scene{font-family:"Deck PuHuiTi",sans-serif;font-synthesis:none}.scene h1{font-weight:900}.scene-brand,.scene .eyebrow,.scene-points span,.step-grid h2{font-weight:800}.scene-copy>p{font-weight:500}.scene-footer{font-weight:400}
 
 .scene-points span{color:#142653}.scene.statement .scene-copy>p,.scene.statement .scene-footer,.scene.statement .scene-brand span{color:#142653}.scene.statement{color:#101f42}.scene.statement .scene-brand{color:#101f42}
+
+/* Official logo keeps its native aspect ratio in every scene and enlarged view. */
+.scene-brand{width:19%;height:auto;line-height:0;z-index:3}
+.scene-brand img{display:block;width:100%;height:auto;object-fit:contain}
+.lightbox-brand{position:absolute;left:24px;top:12px;width:180px;pointer-events:none}
+.lightbox-brand img{display:block;width:100%;height:auto;object-fit:contain;border-radius:0}
+.media-lightbox{padding-top:76px}
