@@ -88,3 +88,16 @@
 .scene.theme-sunshine .scene-points span{background:#fff;color:#10224a}
 .scene.theme-sunshine.statement .scene-copy>p,.scene.theme-sunshine.statement .scene-footer{color:#10224a}
 .scene.theme-sunshine .step-grid>div:nth-child(2){background:#075bff;color:#fff}
+
+/* Free layouts live inside the same 16:9 scene; all media still use the shared touch player. */
+.free-layout{position:absolute;inset:0;isolation:isolate;z-index:0;background:#fff9df;overflow:hidden}
+.free-node{min-width:0;min-height:0;box-sizing:border-box}
+.free-text{white-space:pre-wrap;overflow-wrap:anywhere;font-size:2cqw;line-height:1.35}
+.free-text>div+div{margin-top:.5em}
+.free-media{position:relative}
+.free-media>.scene-media{position:relative;inset:auto;width:100%;height:100%;transform:none;margin:0;border:0;box-shadow:none;padding:.5cqw;border-radius:1cqw}
+.free-scene>.scene-brand{background:#ffffffed;padding:.5cqw .8cqw;border-radius:.7cqw;top:3%;left:3%;width:20%;z-index:5}
+.free-scene>.scene-footer{z-index:5;bottom:2%;left:3%;right:3%;border:0;background:#ffffffed;color:#142653;border-radius:.4cqw;padding:.4cqw .8cqw}
+.scene.dense .scene-copy{top:18%;width:90%}.scene.dense:has(.scene-media) .scene-copy{width:43%}
+.scene.dense h1{font-size:3.4cqw}.scene.dense .scene-copy>p{font-size:1.3cqw;margin:1cqw 0}
+.scene.dense .scene-points{display:grid;grid-template-columns:repeat(3,1fr);gap:.5cqw}.scene.dense .scene-points span{font-size:1.1cqw;padding:.5cqw;line-height:1.3}

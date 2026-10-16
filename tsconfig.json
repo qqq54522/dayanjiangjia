@@ -15,7 +15,8 @@
     "jsx": "react-jsx",
     "types": [
       "node"
-    ]
+    ],
+    "allowImportingTsExtensions": true
   },
   "include": [
     "app",
