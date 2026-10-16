@@ -18,8 +18,8 @@ export default function CodexPanel({disabled,prepare,onComplete}:{disabled:boole
  <label className="field">推理强度<select aria-label="推理强度" disabled={running||sending} value={settings.effort} onChange={e=>{setSettings({...settings,effort:e.target.value});setPending(true)}}>{levels.map(x=><option key={x} value={x}>{x}{x==='medium'?' · 均衡':x==='low'?' · 更快':x==='high'?' · 深入':''}</option>)}</select></label>
  {pending&&<button disabled={sending||running} onClick={saveSettings}>保存模型设置</button>}
  <button className="primary wide" onClick={start} disabled={disabled||running||sending||!state}>{running?'Codex 正在改稿…':sending?'正在提交…':'交给 Codex'}</button>
- <small>使用本机 ChatGPT 登录与 Codex 额度。模型可用性以实际运行结果为准，不自动替换模型。</small>
- {state?.job&&<div className="codex-job" role="status"><b>{({running:'正在处理',completed:'改稿任务已完成',failed:'本次未完成',cancelled:'已取消'} as Record<string,string>)[state.job.state]}</b><small>{state.job.model} / {state.job.effort}</small><p>{state.job.state==='completed'?'生成时摘要：':''}{state.job.message}</p>{running&&<button onClick={async()=>{try{setState(await api('/api/codex/cancel','POST',{}));}catch(e){setError(String(e));}}}>取消本次改稿</button>}{['failed','cancelled'].includes(state.job.state)&&<small>在上方保留或重新填写需求，再点“交给 Codex”重试。</small>}</div>}
+ <small>可调整文字、现有版式和页面配色；图片、GIF、视频保持不变。</small><small>使用本机 ChatGPT 登录与 Codex 额度。模型可用性以实际运行结果为准，不自动替换模型。</small>
+ {state?.job&&<div className="codex-job" role="status"><b>{({running:'正在处理',completed:'改稿任务已完成',failed:'本次未完成',cancelled:'已取消',needs_attention:'需要补充说明'} as Record<string,string>)[state.job.state]}</b><small>{state.job.model} / {state.job.effort}</small><p>{state.job.state==='completed'?'生成时摘要：':''}{state.job.message}</p>{running&&<button onClick={async()=>{try{setState(await api('/api/codex/cancel','POST',{}));}catch(e){setError(String(e));}}}>取消本次改稿</button>}{['failed','cancelled','needs_attention'].includes(state.job.state)&&<small>在上方保留或重新填写需求，再点“交给 Codex”重试。</small>}</div>}
  {error&&<p role="alert" className="codex-error">{error}</p>}
  </section>;
 }
