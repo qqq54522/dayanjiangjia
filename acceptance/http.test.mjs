@@ -7,6 +7,11 @@ async function start(){const dir=mkdtempSync(path.join(tmpdir(),'deck-http-'));m
 test('HTTP upload → save → ZIP → second workspace; byte ranges, isolation and stale writes',async()=>{
  const a=await start(),b=await start();
  try{const upload=async(bytes)=>{const r=await fetch(a.base+'/api/media',{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:bytes});assert.equal(r.status,200);return (await r.json()).url};const video=await upload(mp4),image=await upload(gif);
+ const config=await (await fetch(a.base+'/api/codex')).json();assert.equal(config.settings.model,'gpt-6-astra');assert.equal(config.settings.effort,'medium');
+ const set=await fetch(a.base+'/api/codex/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'gpt-6-luna',effort:'high'})});assert.equal(set.status,200);assert.equal((await set.json()).settings.effort,'high');
+ assert.equal((await fetch(a.base+'/api/codex/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'x;bad',effort:'high'})})).status,400);
+ assert.equal((await fetch(a.base+'/api/codex/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:-1,scope:'all',request:'test'})})).status,409);
+ assert.equal((await fetch(a.base+'/api/codex/start',{method:'POST',headers:{'Content-Type':'application/json',Origin:'https://untrusted.example'},body:'{}'})).status,403);
  const w=await (await fetch(a.base+'/api/workspace')).json();w.data.slides[0].media=video;w.data.slides[0].gallery=[image];
  const save=await fetch(a.base+'/api/workspace',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:w.data,revision:w.revision})});assert.equal(save.status,200);
  for(const [range,start,end] of [['bytes=0-23',0,23],['bytes=24-',24,mp4.length-1],['bytes=-8',mp4.length-8,mp4.length-1]]){const r=await fetch(a.base+video,{headers:{Range:range}});assert.equal(r.status,206);assert.deepEqual(Buffer.from(await r.arrayBuffer()),mp4.subarray(start,end+1));}

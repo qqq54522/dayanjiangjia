@@ -3,3 +3,5 @@
 
 /* Keep transport controls discoverable on a touch-only Pad. */
 @media(pointer:coarse){.player-controls{opacity:1;bottom:max(8px,env(safe-area-inset-bottom));box-shadow:0 4px 24px #0003}.player-controls button{min-height:48px;min-width:52px}}
+
+.codex-panel{margin:18px 0;padding:16px;background:#f1f5ff;border:1px solid #dbe5fb;border-radius:14px}.codex-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.codex-heading span{font-size:11px;color:#53617c}.codex-panel .field{margin:10px 0}.codex-panel small{display:block;font-size:11px;line-height:1.6;color:#53617c;margin-top:8px}.codex-job{margin-top:12px;padding-top:12px;border-top:1px solid #ccd9f2}.codex-job p,.codex-error{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.6;max-height:180px;overflow:auto}.codex-error{color:#a12626}
