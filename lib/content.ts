@@ -1,21 +1,27 @@
 /** Semantic content stays editable independently of the visual template. */
 export type ContentKind='point'|'visual'|'cards'|'compare'|'process'|'table';
-export type ContentItem={placement?:'main'|'detail';id:string;title:string;body:string;detail:string;media?:string;mediaAspect?:number;crop?:{x:number;y:number;width:number;height:number};value?:string;sourceIds?:string[]};
-export type SlideContent={kind:ContentKind;goal:string;summary:string;items:ContentItem[];table?:{headers:string[];rows:string[][]};lockedItemIds?:string[]};
+export type ContentItem={importance?:'key'|'support';interaction?:'none'|'detail'|'media'|'focus';placement?:'main'|'detail';id:string;title:string;body:string;detail:string;media?:string;mediaAspect?:number;crop?:{x:number;y:number;width:number;height:number};value?:string;sourceIds?:string[]};
+export type ContentPresentation={layout?:'auto'|'cover'|'chapter'|'image'|'balanced'|'text'|'cards';subtitle?:'hidden'|'visible';marker?:'auto'|'number'|'none';columns?:2|3|4|5;evidence?:boolean};
+export type SlideContent={kind:ContentKind;goal:string;summary:string;items:ContentItem[];presentation?:ContentPresentation;table?:{headers:string[];rows:string[][]};lockedItemIds?:string[]};
 export type Chapter={id:string;title:string;visible:boolean};
 export type SourceLink={purpose?:'content'|'structure';documentId:string;page:number;preview?:string;label:string;extractedText?:string;notes?:string};
 export type PresentationSettings={display:'screen'|'live';minutes?:number};
 export const contentKinds:readonly [ContentKind,string,string][]=[
- ['point','观点 / 章节','先让听众记住一句话'],['visual','大画面','把空间留给演示与案例'],
+ ['point','观点','先让听众记住一句话'],['visual','素材讲解','围绕图片或视频讲述'],
  ['cards','卡片组','人物、功能与关键数据'],['compare','对比','把差异放在一起说清楚'],
  ['process','步骤','按讲述顺序逐步聚焦'],['table','简明表格','清楚表达范围与对应关系']
 ];
 export const localAsset=(s:unknown):s is string=>typeof s==='string'&&/^\/media\/[\w.-]+$/.test(s);
 const text=(s:unknown,n:number):s is string=>typeof s==='string'&&s.length<=n;
+export function validPresentation(x:unknown):x is ContentPresentation{const p=x as ContentPresentation;return !!p&&(p.layout===undefined||['auto','cover','chapter','image','balanced','text','cards'].includes(p.layout))&&(p.subtitle===undefined||['hidden','visible'].includes(p.subtitle))&&(p.marker===undefined||['auto','number','none'].includes(p.marker))&&(p.columns===undefined||[2,3,4,5].includes(p.columns))&&(p.evidence===undefined||typeof p.evidence==='boolean')}
+export function contentLayout(c:SlideContent){if(c.presentation?.layout&&c.presentation.layout!=='auto')return c.presentation.layout;if(c.kind==='visual')return 'image';if(c.kind==='point'&&c.items.every(i=>!i.title&&!i.body&&!i.media&&!i.value))return 'chapter';return 'auto'}
+export function contentColumns(c:SlideContent){const n=c.items.filter(i=>i.placement!=='detail').length;if(c.presentation?.columns)return c.presentation.columns;if(c.kind==='compare')return 2;return n<=5?Math.max(1,n):3}
+export function hasDetail(i:ContentItem){return i.interaction==='detail'&&!!i.detail.trim()}
+export function numberedItems(c:SlideContent){return c.presentation?.marker==='number'||(c.presentation?.marker!=='none'&&!c.items.filter(i=>i.placement!=='detail').some(i=>i.media||i.value)&&(c.kind==='cards'||c.kind==='compare'))}
 export function validContent(x:unknown):x is SlideContent{
  const c=x as SlideContent;
- return !!c&&contentKinds.some(([k])=>k===c.kind)&&text(c.goal,1000)&&text(c.summary,1600)&&Array.isArray(c.items)&&c.items.length<=100&&
- c.items.every(i=>i&&(i.placement===undefined||['main','detail'].includes(i.placement))&&text(i.id,100)&&!!i.id&&text(i.title,500)&&text(i.body,4000)&&text(i.detail,20000)&&(i.media===undefined||i.media===''||localAsset(i.media))&&(i.mediaAspect===undefined||Number.isFinite(i.mediaAspect)&&i.mediaAspect>0&&i.mediaAspect<=30)&&(i.crop===undefined||[i.crop.x,i.crop.y,i.crop.width,i.crop.height].every(v=>Number.isFinite(v)&&v>=0&&v<=1)&&i.crop.width>0&&i.crop.height>0&&i.crop.x+i.crop.width<=1.00001&&i.crop.y+i.crop.height<=1.00001)&&(i.value===undefined||text(i.value,500))&&(i.sourceIds===undefined||Array.isArray(i.sourceIds)&&i.sourceIds.every(s=>text(s,200))))&&
+ return !!c&&contentKinds.some(([k])=>k===c.kind)&&text(c.goal,1000)&&text(c.summary,1600)&&(c.presentation===undefined||validPresentation(c.presentation))&&Array.isArray(c.items)&&c.items.length<=100&&
+ c.items.every(i=>i&&(i.importance===undefined||['key','support'].includes(i.importance))&&(i.interaction===undefined||['none','detail','media','focus'].includes(i.interaction))&&(i.placement===undefined||['main','detail'].includes(i.placement))&&text(i.id,100)&&!!i.id&&text(i.title,500)&&text(i.body,4000)&&text(i.detail,20000)&&(i.media===undefined||i.media===''||localAsset(i.media))&&(i.mediaAspect===undefined||Number.isFinite(i.mediaAspect)&&i.mediaAspect>0&&i.mediaAspect<=30)&&(i.crop===undefined||[i.crop.x,i.crop.y,i.crop.width,i.crop.height].every(v=>Number.isFinite(v)&&v>=0&&v<=1)&&i.crop.width>0&&i.crop.height>0&&i.crop.x+i.crop.width<=1.00001&&i.crop.y+i.crop.height<=1.00001)&&(i.value===undefined||text(i.value,500))&&(i.sourceIds===undefined||Array.isArray(i.sourceIds)&&i.sourceIds.every(s=>text(s,200))))&&
  new Set(c.items.map(i=>i.id)).size===c.items.length&&
  (c.lockedItemIds===undefined||Array.isArray(c.lockedItemIds)&&c.lockedItemIds.every(id=>c.items.some(i=>i.id===id)))&&
  (c.table===undefined||Array.isArray(c.table.headers)&&c.table.headers.length>0&&c.table.headers.length<=30&&c.table.headers.every(h=>text(h,1000))&&Array.isArray(c.table.rows)&&c.table.rows.length<=300&&c.table.rows.every(r=>Array.isArray(r)&&r.length===c.table!.headers.length&&r.every(cell=>text(cell,4000))));

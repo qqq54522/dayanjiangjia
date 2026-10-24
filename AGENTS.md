@@ -56,3 +56,7 @@
 - `chapter` 只提供统一标记的显示/隐藏；`sourceLinks`、`adaptation` 中保留参考来源、改编原因与待核对项，不当作已证实事实。仅结构参考不得用于补写产品事实。
 - 原稿转换只支持 PPTX、PDF、图片；PPT 动画不保留，教学 GIF/视频作为素材保留。转换记录保存在数据目录的 `imports/`，与文稿素材一样不提交 Git。
 - `/api/references` 的建议需审阅后保存为新版本，不直接替换当前稿。需要 LibreOffice / Poppler / FFmpeg 时先运行 `npm run doctor` 检查本地能力。
+
+## 演讲设计规则
+
+导入和改稿共用 `docs/presentation-harness.md`，由 `lib/harness.mjs` 加载。修改规则时同步检查两条 AI 路径及代表页；不要另写相互矛盾的规则副本。先识别关键主张、关键数字和整体关系，再决定拆分。

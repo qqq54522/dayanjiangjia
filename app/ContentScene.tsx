@@ -1,5 +1,5 @@
 import React,{useEffect,useRef,useId} from 'react';
-import type {ContentItem} from '../lib/content';
+import {contentLayout,contentColumns,hasDetail,numberedItems,type ContentItem} from '../lib/content';
 import type {Slide} from '../lib/deck';
 import {initContent} from '../lib/content-interaction';
 import {brandLogo,brandLogoWhite} from '../lib/brand';
@@ -7,32 +7,51 @@ import {initLogo} from '../lib/logo';
 import {Gallery} from './Scene';
 
 export default function ContentScene({s,interactive=true}:{s:Slide;interactive?:boolean}){
- const clipId=useId();
- const ref=useRef<HTMLElement>(null),c=s.content!,mainItems=c.items.filter(i=>i.placement!=='detail'),evidenceItems=c.kind==='table'?c.items:c.items.filter(i=>i.placement==='detail');
- const opening=c.kind==='point'&&!evidenceItems.length&&mainItems.every(i=>!i.title&&!i.body&&!i.media&&!i.value&&!i.detail);
- useEffect(()=>{if(!ref.current)return;initLogo(ref.current);const events=interactive?initContent(ref.current):undefined;return()=>{events?.()}},[JSON.stringify(s),interactive]);
- const media=(item:ContentItem,scope='main')=>{if(item.crop&&item.mediaAspect&&item.media){const a=item.mediaAspect,r=item.crop;return <svg className="content-crop" viewBox={`${r.x*a} ${r.y} ${r.width*a} ${r.height}`} role="img" aria-label={item.title} style={{aspectRatio:String(r.width*a/r.height)}}><defs><clipPath id={clipId+scope+c.items.indexOf(item)}><rect x={r.x*a} y={r.y} width={r.width*a} height={r.height}/></clipPath></defs><image clipPath={`url(#${clipId+scope+c.items.indexOf(item)})`} href={item.media} width={a} height={1}/></svg>}return <Gallery s={{...s,media:item.media||'',gallery:[],subtitle:item.title}} interactive={interactive}/>};
- return <article ref={ref} className={`scene comic-default semantic-scene content-${c.kind} ${opening?'content-opening':''} ${c.summary?'has-summary':''} ${c.kind==='process'&&mainItems.some(i=>i.media)?'has-step-media':''} ${s.chapter?.visible?'has-chapter':''}`} data-content-count={mainItems.length}>
+ const clipId=useId(),ref=useRef<HTMLElement>(null),c=s.content!;
+ const main=c.items.filter(i=>i.placement!=='detail'),extra=c.items.filter(i=>i.placement==='detail');
+ const layout=contentLayout(c),opening=layout==='cover'||layout==='chapter',image=layout==='image',split=layout==='balanced'||layout==='text';
+ const showSubtitle=c.presentation?.subtitle==='visible',numbered=numberedItems(c),columns=contentColumns(c);
+ const stepMedia=!opening&&!image&&!split&&c.kind==='process'&&main.some(i=>i.media);
+ const evidence=c.presentation?.evidence?extra:[],summary=!opening&&!image?c.summary:'';
+ useEffect(()=>{if(!ref.current)return;initLogo(ref.current);const events=interactive?initContent(ref.current):undefined;return()=>events?.()},[JSON.stringify(s),interactive]);
+ function media(item:ContentItem,scope='main'){
+  if(item.crop&&item.mediaAspect&&item.media){const a=item.mediaAspect,r=item.crop;return <svg className="content-crop" viewBox={`${r.x*a} ${r.y} ${r.width*a} ${r.height}`} role="img" aria-label={item.title} style={{aspectRatio:String(r.width*a/r.height)}}><defs><clipPath id={clipId+scope+c.items.indexOf(item)}><rect x={r.x*a} y={r.y} width={r.width*a} height={r.height}/></clipPath></defs><image clipPath={`url(#${clipId+scope+c.items.indexOf(item)})`} href={item.media} width={a} height={1}/></svg>}
+  return <Gallery s={{...s,media:item.media||'',gallery:[],subtitle:item.title}} interactive={interactive&&item.interaction!=='none'&&item.interaction!=='focus'}/>;
+ }
+ const dialogItems=c.items.filter(i=>hasDetail(i)||(i.crop&&i.media&&i.interaction!=='none'&&i.interaction!=='focus')||evidence.includes(i));
+ function detailDialog(item:ContentItem){return <dialog key={'dialog-'+item.id} className="content-detail" data-detail={c.items.indexOf(item)} aria-label={`${item.title||'素材'}详情`}><div className="content-detail-sheet"><button className="detail-return" data-detail-close aria-label="返回页面">↩</button><h2>{item.title}</h2>{item.value&&<strong className="content-value">{item.value}</strong>}{item.media&&media(item,'detail')}<p>{item.body}</p>{item.interaction==='detail'&&<div className="content-detail-text">{item.detail}</div>}</div></dialog>}
+ function card(item:ContentItem,i:number){
+  const details=hasDetail(item)||!!(item.crop&&item.media&&item.interaction!=='none'),focus=item.interaction==='focus',step=c.kind==='process'&&!split;
+  return <section className={`content-item ${item.media&&!split?'with-media':''} ${item.value?'with-value':''} ${focus?'focus-card':''}`} key={item.id}>
+   {step?<button className="content-step" data-content-step={i} data-step-detail={hasDetail(item)?c.items.indexOf(item):undefined} data-active={i===0?'true':'false'} aria-pressed={i===0}><b>{String(i+1).padStart(2,'0')}</b><strong>{item.title}</strong></button>:<>
+    {numbered&&<b className="content-number" aria-hidden="true">{String(i+1).padStart(2,'0')}</b>}
+    {item.value&&<div className="content-value">{item.value}</div>}<h2>{item.title}</h2>
+   </>}
+   {item.media&&!step&&!split&&media(item)}
+   {item.body&&<p className="content-body">{item.body}</p>}
+   {interactive&&focus&&<button className="content-focus-hit" data-content-step={i} data-active={i===0?'true':'false'} aria-pressed={i===0} aria-label={`聚焦${item.title}`}/>}
+   {interactive&&!step&&!focus&&details&&<button className="content-detail-hit" data-detail-open={c.items.indexOf(item)} aria-label={`查看${item.title||'本项'}详情`}/>}
+  </section>;
+ }
+ const visuals=main.filter(i=>i.media);
+ return <article ref={ref} className={`scene comic-default semantic-scene content-${c.kind} content-layout-${layout} ${opening?'comic-chapter':''} ${summary?'has-summary':''} ${stepMedia?'has-step-media':''} ${s.chapter?.visible?'has-chapter':''} ${numbered?'numbered-cards':''} ${main.some(i=>i.value)?'metric-cards':''}`} data-content-count={main.length} data-content-columns={columns}>
   <div className="comic-backdrop" aria-hidden="true">{s.background&&<img src={s.background} alt=""/>}</div><div className="comic-dots" aria-hidden="true"/>
   <div className="scene-brand"><img className="logo-light" src={brandLogo} alt="洋葱学园"/><img className="logo-dark" src={brandLogoWhite} alt="洋葱学园"/></div>
   {s.chapter?.visible&&<div className="chapter-ribbon"><span>{s.chapter.title}</span></div>}
-  <h1 className="comic-title"><span>{s.title}</span></h1>
-  <div className="content-main">
-   {s.subtitle&&<p className="content-lead">{s.subtitle}</p>}
-   {c.kind==='table'&&c.table?<div className="semantic-table-wrap"><table className="semantic-table"><thead><tr>{c.table.headers.map((h,i)=><th key={i}>{h}</th>)}</tr></thead><tbody>{c.table.rows.map((r,i)=><tr key={i}>{r.map((cell,j)=><td key={j}>{cell}</td>)}</tr>)}</tbody></table></div>:
-    <div className="content-items" style={{'--content-columns':c.kind==='compare'?2:Math.min(mainItems.length||1,c.kind==='process'?5:3)} as React.CSSProperties}>
-    {mainItems.map((item,i)=><section className="content-item" key={item.id}>
-     {c.kind==='process'?<button className="content-step" data-content-step={i} data-step-detail={item.detail?c.items.indexOf(item):undefined} data-active={i===0?'true':'false'} aria-pressed={i===0}><b>{String(i+1).padStart(2,'0')}</b><strong>{item.title}</strong></button>:
-     <>{item.value&&<div className="content-value">{item.value}</div>}<h2>{item.title}</h2></>}
-     {item.media&&c.kind!=='process'&&media(item)}
-     {item.body&&<p className="content-body">{item.body}</p>}
-     {interactive&&c.kind!=='process'&&(item.detail||item.crop)&&<button className="content-detail-hit" data-detail-open={c.items.indexOf(item)} aria-label={`查看${item.title||'本项'}详情`}/>}
-     {(item.detail||item.crop)&&<dialog className="content-detail" data-detail={c.items.indexOf(item)} aria-label={`${item.title||'证据'}详情`}><div className="content-detail-sheet"><button className="detail-return" data-detail-close aria-label="返回页面">↩</button><h2>{item.title}</h2>{item.value&&<strong className="content-value">{item.value}</strong>}{item.media&&media(item,'detail')}<p>{item.body}</p><div className="content-detail-text">{item.detail}</div></div></dialog>}
-    </section>)}
-   </div>}
-   {evidenceItems.length>0&&<div className="evidence-items">{evidenceItems.length>4?<><button data-detail-open="evidence-index">补充资料（{evidenceItems.length}）</button><dialog className="content-detail" data-detail="evidence-index" aria-label="补充资料"><div className="content-detail-sheet"><button className="detail-return" data-detail-close aria-label="返回页面">↩</button><h2>补充资料</h2><div className="evidence-index">{evidenceItems.map(item=><button key={item.id} data-detail-open={c.items.indexOf(item)}>{item.title||'查看完整证据'}</button>)}</div></div></dialog></>:evidenceItems.map(item=><button key={item.id} data-detail-open={c.items.indexOf(item)}>{item.title||'查看完整证据'}</button>)}{evidenceItems.map((item,i)=><React.Fragment key={item.id}><dialog className="content-detail" data-detail={c.items.indexOf(item)} aria-label={item.title||'完整证据'}><div className="content-detail-sheet"><button className="detail-return" data-detail-close aria-label="返回页面">↩</button><h2>{item.title}</h2>{item.media&&media(item,'detail')}<p>{item.body}</p><div className="content-detail-text">{item.detail}</div></div></dialog></React.Fragment>)}</div>}
-   {c.kind==='process'&&mainItems.some(i=>i.media)&&<div className="step-media-stage">{mainItems.map((item,i)=><div key={item.id} data-step-media={i} hidden={i!==0}>{item.media?media(item):<p>{item.body}</p>}</div>)}</div>}
-  </div>
-  {c.summary&&<div className="content-summary">{c.summary}</div>}
+  {opening?<div className="comic-opening"><h1><span>{s.title}</span></h1>{showSubtitle&&s.subtitle&&<div className="comic-text"><p>{s.subtitle}</p></div>}</div>:<>
+   <h1 className="comic-title"><span>{s.title}</span></h1>
+   <div className="content-main">
+    {showSubtitle&&s.subtitle&&!image&&!split&&<p className="content-lead">{s.subtitle}</p>}
+    {image?<div className={`content-image-stage ${visuals.length>1?'multi':''}`} style={{'--content-columns':Math.min(visuals.length||1,3)} as React.CSSProperties}>{visuals.map(i=><div className="content-image-cell" key={i.id}>{media(i)}{interactive&&i.crop&&i.interaction!=='none'&&<button className="content-detail-hit" data-detail-open={c.items.indexOf(i)} aria-label={`放大${i.title||'图片'}`}/>}</div>)}</div>:
+     c.kind==='table'&&c.table?<div className="semantic-table-wrap"><table className="semantic-table"><thead><tr>{c.table.headers.map((h,i)=><th key={i}>{h}</th>)}</tr></thead><tbody>{c.table.rows.map((r,i)=><tr key={i}>{r.map((cell,j)=><td key={j}>{cell}</td>)}</tr>)}</tbody></table></div>:
+     <div className="content-items" style={{'--content-columns':columns} as React.CSSProperties}>{showSubtitle&&s.subtitle&&split&&<p className="content-lead">{s.subtitle}</p>}{main.map(card)}</div>}
+    {split&&<div className="content-split-media">{visuals.length===1?media(visuals[0]):<Gallery s={{...s,media:visuals[0]?.media||'',gallery:visuals.slice(1).map(i=>i.media!),subtitle:s.title}} interactive={interactive}/>}</div>}
+    {stepMedia&&<div className="step-media-stage">{main.map((item,i)=><div key={item.id} data-step-media={i} hidden={i!==0}>{item.media?media(item):<p>{item.body}</p>}</div>)}</div>}
+   </div>
+   {summary&&<div className="content-summary">{summary}</div>}
+  </>}
+  {evidence.length>0&&<button className="evidence-launch" data-detail-open="evidence-index" aria-label={`查看补充资料（${evidence.length}）`}>资料 <span>{evidence.length}</span></button>}
+  {evidence.length>0&&<dialog className="content-detail" data-detail="evidence-index" aria-label="补充资料"><div className="content-detail-sheet"><button className="detail-return" data-detail-close aria-label="返回页面">↩</button><h2>补充资料</h2><div className="evidence-index">{evidence.map(i=><button key={i.id} data-detail-open={c.items.indexOf(i)}>{i.title||'查看资料'}</button>)}</div></div></dialog>}
+  {dialogItems.map(detailDialog)}
  </article>;
 }

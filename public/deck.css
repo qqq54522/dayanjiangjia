@@ -329,3 +329,66 @@
 .content-opening .content-items{display:none}
 .content-cards .content-item:not(:has(.scene-media,.content-body,.content-value,.content-crop)){justify-content:center;text-align:center}.content-cards .content-item:not(:has(.scene-media,.content-body,.content-value,.content-crop))>h2{font-size:3.8cqw}
 .evidence-index{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.evidence-index>button{padding:18px;text-align:left;font:inherit;font-size:clamp(20px,2.2vw,28px);border:1px solid #ccd6dc;border-radius:12px;background:#f7fbfe;color:#2e2e3a;cursor:pointer}@media(max-width:600px){.evidence-index{grid-template-columns:1fr}}
+
+/* Presentation v2: content and visual composition are independent. */
+.scene.semantic-scene:not(.comic-chapter) .comic-title{font-size:4.2cqw;line-height:1.25;top:3%;height:17%;width:77%}
+.scene.semantic-scene.has-chapter:not(.comic-chapter) .comic-title{top:7%;height:15%;font-size:3.8cqw}
+.semantic-scene .content-main{inset:23% 3.5% 4%;gap:1.8cqw}
+.semantic-scene.has-chapter .content-main{top:26%}
+.semantic-scene.has-summary .content-main{bottom:16%}
+.semantic-scene .content-lead{font-size:2.8cqw;line-height:1.4;font-weight:800}
+.semantic-scene .content-item{padding:2.3cqw;gap:1.6cqw;border-radius:.8cqw;background:#fff;box-shadow:.35cqw .35cqw var(--ink)}
+.semantic-scene .content-item:after{display:none}
+.semantic-scene .content-item h2{font-size:3.4cqw;line-height:1.3}
+.semantic-scene .content-body{font-size:2.6cqw;line-height:1.45}
+.semantic-scene .content-value{font-size:6.5cqw;line-height:1.35;letter-spacing:-.025em}
+.content-number{display:grid;place-items:center;align-self:flex-start;background:var(--ink);color:#fff;font-size:2.6cqw;font-weight:900;line-height:1;border-radius:.5cqw;width:5.6cqw;height:4.8cqw;flex-shrink:0}
+.numbered-cards .content-item{justify-content:flex-start!important;text-align:left!important}
+.scene.numbered-cards .content-item>h2{font-size:3.4cqw}
+.scene.metric-cards .content-item{justify-content:center}
+.semantic-scene .with-value h2{font-size:3cqw}
+.semantic-scene .with-media{padding:1.4cqw;gap:1cqw}
+.semantic-scene .with-media h2{font-size:2.8cqw}
+.semantic-scene .with-media .content-body{font-size:2.2cqw}
+.semantic-scene .content-item>.scene-media,.semantic-scene .content-crop{flex:1;min-height:0}
+.semantic-scene .content-items{grid-auto-rows:minmax(0,1fr)}
+.semantic-scene[data-content-columns="4"] .content-item,.semantic-scene[data-content-columns="5"] .content-item{padding:1.3cqw;gap:1.2cqw}
+.semantic-scene[data-content-columns="4"] .content-item h2,.semantic-scene[data-content-columns="5"] .content-item h2{font-size:2.7cqw}
+.semantic-scene[data-content-columns="4"] .content-body,.semantic-scene[data-content-columns="5"] .content-body{font-size:2.3cqw}
+.content-focus-hit{position:absolute;inset:0;border:0;background:transparent!important;cursor:pointer;border-radius:inherit;width:100%;height:100%;min-height:0;padding:0}
+.content-item:has(.content-focus-hit[data-active=true]){background:#fff7ce;border-color:#e1b000;box-shadow:.35cqw .35cqw #e1b000}
+.content-focus-hit:focus-visible{outline:.3cqw solid #1eb2ff;outline-offset:.3cqw}
+.content-item:has(.content-focus-hit[data-active=true]) .content-number{background:#ffd633;color:var(--ink)}
+.content-image-stage{min-height:0;flex:1;display:grid;grid-template-columns:repeat(var(--content-columns),minmax(0,1fr));gap:1.5cqw}
+.content-image-cell{position:relative;min-width:0;min-height:0;display:flex}
+.content-image-cell>.scene-media,.content-split-media>.scene-media{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;transform:none!important;padding:.6cqw;border:.2cqw solid var(--ink);border-radius:1cqw;background:#fff;box-shadow:.4cqw .4cqw var(--ink)}
+.content-image-cell .scene-media img,.content-split-media .scene-media img{object-fit:contain}
+.content-layout-image .content-main{bottom:4%!important}
+.content-layout-image .content-image-stage{height:100%}
+.content-layout-balanced .content-main,.content-layout-text .content-main{display:grid;grid-template-columns:31% minmax(0,1fr);gap:2.4cqw}
+.content-layout-text .content-main{grid-template-columns:57% minmax(0,1fr)}
+.content-layout-balanced .content-items,.content-layout-text .content-items{display:flex;flex-direction:column;justify-content:center;gap:1.5cqw;padding:2.4cqw;background:linear-gradient(155deg,#fff 65%,#eef9ff);border-radius:1.1cqw;border:0;position:relative}
+.content-layout-balanced .content-items:before,.content-layout-text .content-items:before{content:'';position:absolute;inset:0;pointer-events:none;opacity:.22;background:radial-gradient(#1eb2ff55 .06cqw,transparent .1cqw) 100% 0/1cqw 1cqw;mask-image:linear-gradient(215deg,#000,transparent 35%)}
+.content-layout-balanced .content-item,.content-layout-text .content-item{flex:0 1 auto;background:none;box-shadow:none;border:0;padding:0!important;gap:1cqw}
+.content-layout-balanced .content-item h2{font-size:3cqw;line-height:1.4}
+.content-layout-balanced .content-body{font-size:2.4cqw;line-height:1.5}
+.content-layout-text .content-item h2{font-size:3.6cqw;line-height:1.4}
+.content-layout-text .content-body{font-size:2.7cqw}
+.content-layout-balanced .content-item:not(:first-of-type):not(:has(.content-body,.content-value)) h2,.content-layout-text .content-item:not(:first-of-type):not(:has(.content-body,.content-value)) h2{padding:1.1cqw 1.4cqw;border-radius:.6cqw;background:repeating-linear-gradient(125deg,transparent 0,transparent 70%,#ffffff10 70%,#ffffff10 74%,transparent 74%,transparent 80%,#ffffff0a 80%),var(--ink);color:white;box-shadow:.2cqw .3cqw #cad7dd}
+.content-split-media{position:relative;min-width:0;min-height:0}
+.semantic-scene.content-point:not(.comic-chapter) .content-item h2{font-size:4.7cqw}
+.semantic-scene.content-point:not(.comic-chapter) .content-body{font-size:3cqw}
+.semantic-scene.comic-chapter .comic-opening{inset:24% 4% 7%;padding:0;justify-content:center}
+.semantic-scene.comic-chapter.content-layout-cover .comic-opening h1{font-size:6.4cqw;line-height:1.3}
+.semantic-scene.comic-chapter.content-layout-chapter .comic-opening h1{font-size:6cqw;line-height:1.3}
+.semantic-scene.comic-chapter .comic-opening .comic-text p{font-size:2.6cqw;line-height:1.4}
+.chapter-ribbon{border-left:.55cqw solid var(--onion-brand-blue)}
+.chapter-ribbon span{top:.75cqw;left:3.5cqw;background:#173747;color:#fff;border-radius:.35cqw;padding:.3cqw 1.2cqw;font-size:1.6cqw;line-height:1.4;box-shadow:.2cqw .2cqw #1eb2ff66}
+.evidence-launch{position:absolute;bottom:1cqw;right:4cqw;border:1px solid #b5c4cc;border-radius:.7cqw;padding:.45cqw .9cqw;background:#fff;color:#173747;font:inherit;font-size:1.6cqw;min-height:0;cursor:pointer}
+.semantic-scene .content-detail-hit{min-height:0;padding:0}
+.semantic-scene.content-process .content-step strong{font-size:3cqw}
+.semantic-scene.content-process.has-step-media .content-item{padding:.45cqw 1.1cqw;justify-content:center}
+.semantic-scene.content-process.has-step-media .content-step strong{font-size:2cqw}
+
+/* Focusing an in-slide control must never scroll the clipped slide canvas. */
+.scene.semantic-scene{overflow:clip}
