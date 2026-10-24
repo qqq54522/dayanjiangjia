@@ -9,7 +9,7 @@ export default function StyleSamples({slides,disabled=false,onAdd}:{slides:Slide
  const exceedsLimit=slides.length+examples.length>60;
  return <>
   <h2>品牌样式示例</h2>
-  <p>六类用途，{examples.length} 个版式。先想清楚这一页要表达什么，再选择合适的布局。</p>
+  <p>{presentationCategories.length} 类用途，{examples.length} 个版式。先想清楚这一页要表达什么，再选择合适的布局。</p>
   <nav className="sample-categories" aria-label="示例用途">{presentationCategories.map((group,i)=><a key={group.id} href={`#sample-${group.id}`}>{String(i+1).padStart(2,'0')} {group.label}</a>)}</nav>
   {presentationCategories.map((group,i)=><section className="sample-category" id={`sample-${group.id}`} key={group.id}>
    <header><span>{String(i+1).padStart(2,'0')}</span><div><h3>{group.label}</h3><p>{group.hint}</p></div></header>

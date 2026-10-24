@@ -51,7 +51,7 @@
 
 ## 大演说家：结构化页面与原稿改编
 - `content` 是可编辑正文：六种结构 point / visual / cards / compare / process / table。保持模块稳定 id；`lockedItemIds` 锁定的模块不可被 AI 修改。
-- 模块 `placement: detail` 是补充详情入口，不进入主画面。不要把“移入详情”只写在说明里却仍堆在主画面。总结条使用 `content.summary`。
+- `placement: detail` 是备稿参考资料，在「Codex 改稿 → 备稿与参考资料」管理，不混入「文字内容」模块；仅显式开启 `presentation.evidence` 时提供演示资料入口。封面、章节开场等版式未展示的正文也收纳在备稿区，保留原数据便于切回。不要把“移入详情”只写在说明里却仍堆在主画面。总结条使用 `content.summary`。
 - 默认保持公司模板与阿里普惠体 2.0。以一页一个讲述目标为原则，密集内容先提议拆分或转入详情，不缩字硬塞。
 - `chapter` 只提供统一标记的显示/隐藏；`sourceLinks`、`adaptation` 中保留参考来源、改编原因与待核对项，不当作已证实事实。仅结构参考不得用于补写产品事实。
 - 原稿转换只支持 PPTX、PDF、图片；PPT 动画不保留，教学 GIF/视频作为素材保留。转换记录保存在数据目录的 `imports/`，与文稿素材一样不提交 Git。

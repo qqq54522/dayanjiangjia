@@ -42,3 +42,11 @@ export function preserveLockedItems(before:SlideContent|undefined,after:SlideCon
  return {...after,lockedItemIds:[...before.lockedItemIds]};
 }
 export function moveContentItem(items:ContentItem[],id:string,beforeId:string){const from=items.findIndex(i=>i.id===id),to=items.findIndex(i=>i.id===beforeId);if(from<0||to<0||from===to)return items;const next=[...items];const [item]=next.splice(from,1);next.splice(next.findIndex(i=>i.id===beforeId),0,item);return next}
+
+/** Editor organization follows what the current template actually puts on screen. */
+export function contentEditingGroups(c:SlideContent){
+ const layout=contentLayout(c),opening=layout==='cover'||layout==='chapter';
+ const main=c.items.filter(i=>i.placement!=='detail'),references=c.items.filter(i=>i.placement==='detail');
+ const bodyVisible=!opening&&layout!=='image'&&c.kind!=='table';
+ return {bodyVisible,opening,body:bodyVisible?main:[],retained:bodyVisible?[]:main,references,media:opening?[]:main,summaryVisible:!opening&&layout!=='image'};
+}

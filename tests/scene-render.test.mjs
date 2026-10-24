@@ -17,7 +17,7 @@ test('style gallery renders every classic and semantic example and enforces actu
  const vite=await createServer({server:{middlewareMode:true,hmr:false,watch:null},appType:'custom'});
  try{const{default:StyleSamples}=await vite.ssrLoadModule('/app/StyleSamples.tsx');const{styleExamples,styleExampleInfo}=await vite.ssrLoadModule('/lib/templates.ts');const source=initial.slides.slice(0,1),examples=styleExamples(source),count=examples.length;
  const render=n=>renderToStaticMarkup(React.createElement(StyleSamples,{slides:Array.from({length:n},(_,i)=>({...source[0],id:String(i)})),onAdd:()=>{throw Error('Rendering must not alter the manuscript')}}));
- const html=render(1);assert.equal((html.match(/class="sample-category"/g)||[]).length,6);assert.equal((html.match(/class="sample-example"/g)||[]).length,count);for(const s of examples)assert.ok(html.includes(styleExampleInfo(s).label));assert.ok(html.includes(`添加全部 ${count} 页示例`));assert.ok(html.includes('章节开场'));assert.ok(html.includes('简明表格'));assert.ok(!render(60-count).includes('disabled=""'));assert.ok(render(61-count).includes('disabled=""'));assert.ok(render(61-count).includes('超过 60 页上限'));
+ const html=render(1);assert.equal((html.match(/class="sample-category"/g)||[]).length,7);assert.equal((html.match(/class="sample-example"/g)||[]).length,count);for(const s of examples)assert.ok(html.includes(styleExampleInfo(s).label));assert.ok(html.includes(`添加全部 ${count} 页示例`));assert.ok(html.includes('章节开场'));assert.ok(html.includes('简明表格'));assert.ok(!render(60-count).includes('disabled=""'));assert.ok(render(61-count).includes('disabled=""'));assert.ok(render(61-count).includes('超过 60 页上限'));
  }finally{await vite.close()}
 });
 
@@ -31,13 +31,17 @@ test('structured list, spotlight and chart variants render distinctly without lo
  }finally{await vite.close()}
 });
 
-test('cover editor explains hidden modules and optional evidence exposes its saved detail text',async()=>{
+test('editor separates on-screen content from reference material and preserves optional evidence',async()=>{
  const vite=await createServer({server:{middlewareMode:true,hmr:false,watch:null},appType:'custom'});
  try{
   const{Scene}=await vite.ssrLoadModule('/app/Scene.tsx');const{default:ContentEditor}=await vite.ssrLoadModule('/app/ContentEditor.tsx');
   const s={...initial.slides[0],content:{kind:'point',goal:'定位',summary:'',presentation:{layout:'cover',evidence:false},items:[{id:'main',title:'主张',body:'解释',detail:'',placement:'main'},{id:'ref',title:'备稿参考',body:'',detail:'仅用于备稿的完整资料正文',placement:'detail'}]}};
   const editor=renderToStaticMarkup(React.createElement(ContentEditor,{s,doc:{...initial,slides:[s]},change:()=>{throw Error('Rendering must not change data')},tab:'text'}));
-  assert.ok(editor.includes('下方正文模块暂不上屏'));assert.ok(editor.includes('不进入主画面'));assert.ok(editor.includes('补充资料入口'));
+  assert.ok(editor.includes('查看备稿与参考资料（2）'));assert.ok(!editor.includes('class="module-row"'));assert.ok(!editor.includes('仅用于备稿的完整资料正文'));assert.ok(!editor.includes('展示位置'));
+  const renderEditor=(slide,tab)=>renderToStaticMarkup(React.createElement(ContentEditor,{s:slide,doc:{...initial,slides:[slide]},change:()=>{throw Error('Rendering must not change data')},tab}));
+  const reference=renderEditor(s,'reference');assert.ok(reference.includes('当前版式暂不展示的正文'));assert.ok(reference.includes('仅用于备稿的完整资料正文'));assert.ok(reference.includes('value="主张"'));assert.ok(reference.includes('切换为卡片页并展示'));assert.ok(!reference.includes('模块 01'));
+  const cards={...s,content:{...s.content,kind:'cards',presentation:{layout:'cards'}}};const text=renderEditor(cards,'text');assert.equal((text.match(/class="module-row"/g)||[]).length,1);assert.ok(text.includes('value="主张"'));assert.ok(!text.includes('value="备稿参考"'));assert.ok(!text.includes('仅用于备稿的完整资料正文'));assert.ok(renderEditor(cards,'reference').includes('移到页面正文'));
+
   const render=()=>renderToStaticMarkup(React.createElement(Scene,{s}));
   assert.ok(!render().includes('仅用于备稿的完整资料正文'));assert.ok(!render().includes('evidence-launch'));
   s.content.presentation.evidence=true;const visible=render();assert.ok(visible.includes('evidence-launch'));assert.ok(visible.includes('仅用于备稿的完整资料正文'));

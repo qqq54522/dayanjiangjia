@@ -3,7 +3,8 @@ import {contentFromLegacy,contentLayout,type ContentKind,type ContentPresentatio
 
 /** One user-facing taxonomy shared by the gallery and editor; storage formats remain compatible. */
 export const presentationCategories=[
- {id:'opening',label:'封面与章节',hint:'开场或引入新话题',variants:['cover','chapter']},
+ {id:'cover',label:'封面',hint:'整份演示的第一印象',variants:['cover']},
+ {id:'chapter',label:'章节开场',hint:'引入一个新话题',variants:['chapter']},
  {id:'point',label:'观点与重点',hint:'让听众记住一个主张',variants:['point']},
  {id:'media',label:'图文与素材',hint:'围绕画面安排文字',variants:['image','balanced','text']},
  {id:'collection',label:'列表与卡片',hint:'同一主题的并列内容',variants:['list','cards']},

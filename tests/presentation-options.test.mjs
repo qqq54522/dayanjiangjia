@@ -5,7 +5,7 @@ import {initial,validSlide} from '../lib/deck.ts';
 import {styleExamples} from '../lib/templates.ts';
 const variants=Object.keys(presentationVariants);
 test('one taxonomy covers every example and every selectable variant exactly once',()=>{
- assert.equal(presentationCategories.length,6);
+ assert.equal(presentationCategories.length,7);
  assert.deepEqual(presentationCategories.flatMap(c=>c.variants),variants);
  const examples=styleExamples(initial.slides);
  assert.deepEqual(examples.map(slideVariant),variants);
@@ -34,4 +34,14 @@ test('point uses one dark preset while older light pages remain readable and unc
  const old={...initial.slides[0],content:{kind:'point',goal:'观点',summary:'',items:[],presentation:{layout:'auto'}}};
  const before=JSON.stringify(old);assert.ok(validSlide(old));assert.equal(slideCategory(old).id,'point');assert.equal(JSON.stringify(old),before);
  const examples=styleExamples(initial.slides).filter(s=>slideCategory(s).id==='point');assert.equal(examples.length,1);assert.equal(examples[0].content.presentation.layout,'spotlight');assert.equal(applyVariant(old,'point').content.presentation.layout,'spotlight');
+});
+
+test('cover and chapter are independent categories and reference grouping never rewrites contents',async()=>{
+ const {contentEditingGroups}=await import('../lib/content.ts');
+ const s={...initial.slides[0],content:{kind:'cards',goal:'',summary:'',items:[{id:'a',title:'正文',body:'解释',detail:'',media:'/media/a.png'},{id:'b',title:'参考',body:'备稿文字',detail:'来源',placement:'detail'}]}};
+ assert.equal(slideCategory(applyVariant(s,'cover')).id,'cover');assert.equal(slideCategory(applyVariant(s,'chapter')).id,'chapter');
+ const before=JSON.stringify(s);const g=contentEditingGroups(s.content);
+ assert.deepEqual(g.body.map(i=>i.id),['a']);assert.deepEqual(g.references.map(i=>i.id),['b']);assert.deepEqual(g.media.map(i=>i.id),['a']);
+ for(const variant of ['cover','chapter','image','table']){const c=applyVariant(s,variant).content;const grouped=contentEditingGroups(c);assert.equal(grouped.bodyVisible,false);assert.deepEqual(grouped.body,[]);assert.deepEqual(grouped.retained.map(i=>i.id),['a']);assert.deepEqual(grouped.references.map(i=>i.id),['b']);}
+ assert.equal(JSON.stringify(s),before);
 });
