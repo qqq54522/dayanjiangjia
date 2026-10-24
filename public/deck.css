@@ -287,7 +287,8 @@
 .semantic-table th{background:#173747;color:white;padding:1.3cqw 1.8cqw;font-weight:800}
 .semantic-table td{padding:1.2cqw 1.8cqw;border-bottom:1px solid #cddde5;white-space:pre-wrap}
 .semantic-table tr:nth-child(even){background:#eff9ff}
-.content-detail-hit{position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:inherit;background:transparent;cursor:zoom-in}
+/* Click targets stay invisible even when host UI button hover styles apply. */
+.content-detail-hit{position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:inherit;background:transparent!important;cursor:zoom-in}
 .content-detail-hit:focus-visible{outline:.3cqw solid #1eb2ff;outline-offset:.3cqw}
 .content-detail{width:90vw;max-width:1200px;max-height:90dvh;padding:0;border:2px solid #2e2e3a;border-radius:20px;color:#2e2e3a;background:white;box-shadow:8px 8px #1eb2ff;overflow:auto;font-family:'Deck PuHuiTi',sans-serif}
 .content-detail::backdrop{background:#111b2aeb}

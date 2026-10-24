@@ -30,3 +30,16 @@ test('structured list, spotlight and chart variants render distinctly without lo
  const chart=render('chart');assert.ok(chart.includes('semantic-chart-track'));assert.ok(chart.includes('66'));assert.ok(chart.includes('-44'));assert.ok(!chart.includes('NaN'));
  }finally{await vite.close()}
 });
+
+test('cover editor explains hidden modules and optional evidence exposes its saved detail text',async()=>{
+ const vite=await createServer({server:{middlewareMode:true,hmr:false,watch:null},appType:'custom'});
+ try{
+  const{Scene}=await vite.ssrLoadModule('/app/Scene.tsx');const{default:ContentEditor}=await vite.ssrLoadModule('/app/ContentEditor.tsx');
+  const s={...initial.slides[0],content:{kind:'point',goal:'定位',summary:'',presentation:{layout:'cover',evidence:false},items:[{id:'main',title:'主张',body:'解释',detail:'',placement:'main'},{id:'ref',title:'备稿参考',body:'',detail:'仅用于备稿的完整资料正文',placement:'detail'}]}};
+  const editor=renderToStaticMarkup(React.createElement(ContentEditor,{s,doc:{...initial,slides:[s]},change:()=>{throw Error('Rendering must not change data')},tab:'text'}));
+  assert.ok(editor.includes('下方正文模块暂不上屏'));assert.ok(editor.includes('不进入主画面'));assert.ok(editor.includes('补充资料入口'));
+  const render=()=>renderToStaticMarkup(React.createElement(Scene,{s}));
+  assert.ok(!render().includes('仅用于备稿的完整资料正文'));assert.ok(!render().includes('evidence-launch'));
+  s.content.presentation.evidence=true;const visible=render();assert.ok(visible.includes('evidence-launch'));assert.ok(visible.includes('仅用于备稿的完整资料正文'));
+ }finally{await vite.close()}
+});
