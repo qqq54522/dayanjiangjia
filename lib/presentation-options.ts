@@ -4,7 +4,7 @@ import {contentFromLegacy,contentLayout,type ContentKind,type ContentPresentatio
 /** One user-facing taxonomy shared by the gallery and editor; storage formats remain compatible. */
 export const presentationCategories=[
  {id:'opening',label:'封面与章节',hint:'开场或引入新话题',variants:['cover','chapter']},
- {id:'point',label:'观点与重点',hint:'让听众记住一个主张',variants:['point','spotlight']},
+ {id:'point',label:'观点与重点',hint:'让听众记住一个主张',variants:['point']},
  {id:'media',label:'图文与素材',hint:'围绕画面安排文字',variants:['image','balanced','text']},
  {id:'collection',label:'列表与卡片',hint:'同一主题的并列内容',variants:['list','cards']},
  {id:'process',label:'流程步骤',hint:'有先后顺序的行动路径',variants:['process']},
@@ -16,7 +16,6 @@ export const presentationVariants:Record<VariantId,{label:string;hint:string;kin
  cover:{label:'封面',hint:'整份演示的开场主张',kind:'point',layout:'cover'},
  chapter:{label:'章节开场',hint:'用醒目的倾斜大标题引入新话题',kind:'point',layout:'chapter'},
  point:{label:'观点与解释',hint:'一句主张，配必要的解释',kind:'point',layout:'auto'},
- spotlight:{label:'重点强调',hint:'用深色面板突出核心结论',kind:'point',layout:'spotlight'},
  image:{label:'大图展示',hint:'正文区域留给图片、GIF 或视频',kind:'visual',layout:'image'},
  balanced:{label:'图文并重',hint:'左侧约 1/3 讲解，右侧展示素材',kind:'visual',layout:'balanced'},
  text:{label:'突出文字',hint:'左侧约 3/5 讲解，素材辅助',kind:'visual',layout:'text'},
@@ -28,10 +27,10 @@ export const presentationVariants:Record<VariantId,{label:string;hint:string;kin
  table:{label:'简明表格',hint:'说明范围、条件与对应关系',kind:'table',layout:'auto'}
 };
 export function slideVariant(s:Slide):VariantId{
- if(s.content){const c=s.content,l=contentLayout(c);if(l!=='auto')return l;
+ if(s.content){const c=s.content,l=contentLayout(c);if(l==='spotlight')return 'point';if(l!=='auto')return l;
  return ({point:'point',visual:'image',cards:'cards',compare:'compare',process:'process',table:'table'} as const)[c.kind];}
  if(s.media||s.gallery?.length||s.layout==='media'){const i=s.composition?.intent;return i==='text'?'text':i==='balanced'||(i!=='visual'&&(s.subtitle||s.points.length))?'balanced':'image';}
- return ({hero:'chapter',statement:'list',steps:'cards',highlight:'spotlight',chart:'chart',media:'image'} as const)[s.layout];
+ return ({hero:'chapter',statement:'list',steps:'cards',highlight:'point',chart:'chart',media:'image'} as const)[s.layout];
 }
 export function slideCategory(s:Slide){const variant=slideVariant(s);return presentationCategories.find(c=>(c.variants as readonly string[]).includes(variant))!;}
 export function applyVariant(s:Slide,variant:VariantId):Slide{

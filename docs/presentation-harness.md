@@ -76,4 +76,4 @@ details 默认保存在编辑端，不自动生成画布底部的小字入口。
 
 ### 统一的用途入口
 
-样式示例和编辑器共用六类用途：封面与章节、观点与重点、图文与素材、列表与卡片、流程步骤、对比与数据。不要把同一用途的不同布局作为平级类别。封面/章节用 cover/chapter；观点用 point + auto/spotlight；图文用 visual + image/balanced/text；并列列表用 cards + list/cards；有先后关系才用 process；差异与数据用 compare、compare + chart 或 table。条形图的 value 应为相同单位的有限数值，单位在正文说明，禁止编造数值。切换只调整呈现，不删除模块、锁定、素材或来源。
+样式示例和编辑器共用六类用途：封面与章节、观点与重点、图文与素材、列表与卡片、流程步骤、对比与数据。不要把同一用途的不同布局作为平级类别。封面/章节用 cover/chapter；观点用 point + auto（旧稿的 spotlight 继续兼容，但不作为新的预设选项）；图文用 visual + image/balanced/text；并列列表用 cards + list/cards；有先后关系才用 process；差异与数据用 compare、compare + chart 或 table。条形图的 value 应为相同单位的有限数值，单位在正文说明，禁止编造数值。切换只调整呈现，不删除模块、锁定、素材或来源。

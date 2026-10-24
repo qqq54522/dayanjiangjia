@@ -26,7 +26,7 @@ test('structured list, spotlight and chart variants render distinctly without lo
  try{const{Scene}=await vite.ssrLoadModule('/app/Scene.tsx');const{applyVariant}=await vite.ssrLoadModule('/lib/presentation-options.ts');
  const source={...initial.slides[0],content:{kind:'cards',goal:'比较',summary:'',items:[{id:'a',title:'示例 A',body:'小时',value:'66',detail:''},{id:'b',title:'示例 B',body:'小时',value:'-44',detail:''}]}};
  const render=id=>renderToStaticMarkup(React.createElement(Scene,{s:applyVariant(source,id)}));
- assert.ok(render('list').includes('content-layout-list'));assert.ok(render('spotlight').includes('content-layout-spotlight'));
+ assert.ok(render('list').includes('content-layout-list'));assert.ok(renderToStaticMarkup(React.createElement(Scene,{s:{...source,content:{...source.content,presentation:{layout:'spotlight'}}}})).includes('content-layout-spotlight'));
  const chart=render('chart');assert.ok(chart.includes('semantic-chart-track'));assert.ok(chart.includes('66'));assert.ok(chart.includes('-44'));assert.ok(!chart.includes('NaN'));
  }finally{await vite.close()}
 });

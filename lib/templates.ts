@@ -28,7 +28,7 @@ export function styleExamples(source:Slide[]):Slide[]{
  const all=[...classicExamples(source),...examples.map((e,i):Slide=>({id:crypto.randomUUID(),round:1,theme:'brand',layout:'statement',...e,points:[],media:'',gallery:[],background,note:'母版结构示意。复制后替换内容；可在素材与排版中选择编号、列数与图文布局。',source:'工作台样式示例',chapter:{id:'example-chapter',title:'表达方式',visible:i===0}}))];
  const classic=(layout:Slide['layout'])=>all.find(s=>!s.content&&s.layout===layout)!;
  const semantic=(kind:NonNullable<Slide['content']>['kind'])=>all.find(s=>s.content?.kind===kind)!;
- const sources:Record<VariantId,Slide>={cover:classic('hero'),chapter:classic('hero'),point:semantic('point'),spotlight:classic('highlight'),image:classic('media'),balanced:classic('media'),text:classic('media'),list:classic('statement'),cards:semantic('cards'),process:semantic('process'),compare:semantic('compare'),chart:classic('chart'),table:semantic('table')};
+ const sources:Record<VariantId,Slide>={cover:classic('hero'),chapter:classic('hero'),point:semantic('point'),image:classic('media'),balanced:classic('media'),text:classic('media'),list:classic('statement'),cards:semantic('cards'),process:semantic('process'),compare:semantic('compare'),chart:classic('chart'),table:semantic('table')};
  return presentationCategories.flatMap(group=>group.variants.map(id=>{
   let base={...sources[id],id:crypto.randomUUID()};
   if(id==='balanced'||id==='text')base={...base,subtitle:'先讲清主张，再用画面说明',points:['一个核心观点','必要的解释','具体的例子']};

@@ -28,3 +28,10 @@ test('an empty page can intentionally select a point without being classified as
  const s={...initial.slides[0],content:{kind:'point',goal:'',summary:'',items:[]}};
  assert.equal(slideVariant(applyVariant(s,'point')),'point');
 });
+test('point uses one public preset while older emphasis pages remain readable and unchanged',()=>{
+ assert.deepEqual(presentationCategories.find(c=>c.id==='point').variants,['point']);
+ assert.ok(!('spotlight' in presentationVariants));
+ const old={...initial.slides[0],content:{kind:'point',goal:'观点',summary:'',items:[],presentation:{layout:'spotlight'}}};
+ const before=JSON.stringify(old);assert.ok(validSlide(old));assert.equal(slideCategory(old).id,'point');assert.equal(JSON.stringify(old),before);
+ assert.ok(!styleExamples(initial.slides).some(s=>s.content?.presentation?.layout==='spotlight'));
+});

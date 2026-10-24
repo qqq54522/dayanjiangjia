@@ -24,6 +24,7 @@ import {initGallery} from '../lib/gallery';
 import {initial,Slide,Workspace,Version,validSlide} from '../lib/deck';
 const clone=<T,>(x:T):T=>JSON.parse(JSON.stringify(x));
 export default function Studio(){const [selectedFeedback,setSelectedFeedback]=useState<string[]>([]);const [pendingVersion,setPendingVersion]=useState(''),[replaceVersion,setReplaceVersion]=useState(''),[versionError,setVersionError]=useState('');const [projectName,setProjectName]=useState('');const [editorTab,setEditorTab]=useState('text');const [doc,setDoc]=useState<Workspace>(initial),[revision,setRevision]=useState(0),[selected,select]=useState('F01'),[scope,setScope]=useState('page'),[requests,setRequests]=useState<Record<string,string>>({}),[author,setAuthor]=useState(''),[busy,setBusy]=useState(false),[status,setStatus]=useState('正在读取本机稿件…'),[ready,setReady]=useState(false),[dirty,setDirty]=useState(false),[ai,setAi]=useState(false),[modal,setModal]=useState(''),[proposal,setProposal]=useState<Slide[]>([]),[playing,setPlaying]=useState<Slide[]|null>(null),[position,setPosition]=useState(0),[previewPhone,setPreviewPhone]=useState(false),[newOutline,setNewOutline]=useState(''),[versionName,setVersionName]=useState('');
+useEffect(()=>{document.title=ready&&doc.title.trim()?`大演说家 · ${doc.title.trim()}`:'大演说家'},[ready,doc.title]);
 const [chosenPages,setChosenPages]=useState<string[]>([]);
 const [saveState,setSaveState]=useState({saving:false,error:'',undo:0,redo:0});
 const dirtyRef=useRef(dirty);dirtyRef.current=dirty;
