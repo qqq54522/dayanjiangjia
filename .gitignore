@@ -31,3 +31,6 @@ work/
 *.ttf
 *.otf
 *.woff*
+
+# Reviewed built-in master artwork only; all business materials remain ignored.
+!masters/onion-comic/1.0.0/assets/background.png

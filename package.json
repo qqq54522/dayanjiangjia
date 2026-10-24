@@ -9,7 +9,7 @@
   "scripts": {
     "setup": "node scripts/setup.mjs",
     "start": "node server.mjs",
-    "build": "vite build",
+    "build": "node scripts/build-masters.mjs && vite build",
     "check": "tsc --noEmit && node --test tests/*.test.mjs",
     "doctor": "node scripts/doctor.mjs",
     "workspace": "node scripts/workspace.mjs",

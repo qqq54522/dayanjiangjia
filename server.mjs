@@ -1,3 +1,5 @@
+import {installMasters} from './lib/master-resources.mjs';
+import {DEFAULT_MASTER,masterCatalog} from './lib/masters.ts';
 import http from 'node:http';
 import {createConversions} from './lib/conversion.mjs';
 import {readFileSync,existsSync,mkdirSync,statSync,createReadStream} from 'node:fs';
@@ -10,10 +12,9 @@ import {pack,unpack,saveMedia} from './lib/transfer.mjs';
 const root=path.dirname(fileURLToPath(import.meta.url));const port=Number(process.env.PORT||8788);const dataDir=path.resolve(process.env.DECK_DATA_DIR||path.join(root,'.local'));
 const fontDir=path.join(dataDir,'fonts');
 const mediaDir=path.join(dataDir,'media');mkdirSync(mediaDir,{recursive:true});const store=openStore(dataDir);
-// Course artwork stays in local data; portable packages carry it as a normal asset.
-const themeFile=path.join(dataDir,'theme','background.png');
-const defaultBackground=existsSync(themeFile)?saveMedia(mediaDir,readFileSync(themeFile)):undefined;
-const workspaceView=()=>{const v=store.read();if(defaultBackground)v.data.slides=v.data.slides.map(s=>({...s,background:s.background??defaultBackground}));return v};
+const masters=installMasters(mediaDir);
+const defaultBackground=masters.background();
+const workspaceView=()=>{const v=store.read();return {...v,data:masters.hydrate(v.data)}};
 const codex=createCodexBridge({dir:dataDir,store});
 const conversions=createConversions({dir:dataDir});
 const send=(res,status,data)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(data))};
@@ -43,11 +44,12 @@ const server=http.createServer(async(req,res)=>{try{
  if(url.pathname==='/api/codex/start'&&req.method==='POST')return send(res,202,codex.start(await body(req)));
  if(url.pathname==='/api/codex/cancel'&&req.method==='POST')return send(res,200,codex.cancel());
  if(url.pathname==='/api/identity')return send(res,200,{app:'onion-deck-studio',version:1});
+ if(url.pathname==='/api/masters'&&req.method==='GET')return send(res,200,{default:DEFAULT_MASTER,masters:masterCatalog});
  if(url.pathname==='/api/workspace'&&req.method==='GET')return send(res,200,workspaceView());
- if(url.pathname==='/api/workspace'&&req.method==='PUT'){const b=await body(req);return send(res,200,store.save(b.data,b.revision))}
+ if(url.pathname==='/api/workspace'&&req.method==='PUT'){const b=await body(req);return send(res,200,store.save(masters.hydrate(b.data),b.revision))}
  if(url.pathname==='/api/proposals'&&req.method==='POST')return send(res,200,store.propose(await body(req)));
  if(url.pathname==='/api/export'&&req.method==='GET'){let data=workspaceView().data;const versionId=url.searchParams.get('version');if(versionId!==null){const version=data.versions.find(v=>v.id===versionId);if(!version)return send(res,404,{error:'此演示版本不存在，请刷新版本列表'});data={...data,slides:version.slides,settings:version.settings,comments:version.comments||[],proposals:[],versions:[version]}}const zip=pack(data,mediaDir,fontDir);res.writeHead(200,{'Content-Type':'application/zip','Content-Disposition':'attachment; filename=deck.deck.zip','Cache-Control':'no-store'});return res.end(zip)}
- if(url.pathname==='/api/import'&&req.method==='POST')return send(res,200,{data:unpack(await raw(req),mediaDir,fontDir)});
+ if(url.pathname==='/api/import'&&req.method==='POST')return send(res,200,{data:masters.hydrate(unpack(await raw(req),mediaDir,fontDir))});
  if(url.pathname==='/api/media'&&req.method==='POST'){return send(res,200,{url:saveMedia(mediaDir,await raw(req))})}
  if(url.pathname.startsWith('/api/'))return send(res,404,{error:'未找到接口'});
  if(!['GET','HEAD'].includes(req.method))return send(res,405,{error:'不支持此操作'});

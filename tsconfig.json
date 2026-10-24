@@ -16,7 +16,8 @@
     "types": [
       "node"
     ],
-    "allowImportingTsExtensions": true
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true
   },
   "include": [
     "app",
