@@ -1,0 +1,34 @@
+import React,{useEffect,useRef,useState} from 'react';
+import type {Slide} from '../lib/deck';
+import {Scene} from './Scene';
+import {Upload,RefreshCw} from 'lucide-react';
+type Task={id:string;target:Slide;groupIds?:string[];request?:string};
+const key=(id:string)=>'page-reference-task:'+id;
+function read(id:string):Task|null{try{return JSON.parse(localStorage.getItem(key(id))||'null')}catch{return null}}
+export function ReferenceTaskNotice({id,onOpen}:{id:string;onOpen:()=>void}){
+ const [label,setLabel]=useState('');
+ useEffect(()=>{let live=true;async function refresh(){const task=read(id);if(!task){if(live)setLabel('');return}try{const r=await fetch('/api/references/'+task.id);if(!r.ok)throw Error();const d=await r.json();const groups=d.groups||[];if(live)setLabel(d.state==='parsing'?'正在读取参考材料':groups.some((g:any)=>g.state==='running')?'Codex 正在生成本页':groups.some((g:any)=>g.slides?.length)?'本页生成结果待确认':d.state==='failed'||groups.some((g:any)=>g.state==='failed')?'生成遇到问题，点击重试':'参考已上传，继续生成本页')}catch{if(live)setLabel('查看本页参考任务')}}void refresh();const timer=setInterval(refresh,1500);return()=>{live=false;clearInterval(timer)}},[id]);
+ return label?<button className="reference-task-notice" onClick={onOpen}><b>{label}</b><span>查看进度与结果 →</span></button>:null;
+}
+async function api(url:string,method='GET',body?:unknown){const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});const j=await r.json();if(!r.ok)throw Error(j.error||'请求失败');return j}
+export default function PageReference({slide,onApply}:{slide:Slide;onApply:(result:Slide,original:Slide)=>Promise<void>}){
+ const [task,setTask]=useState<Task|null>(()=>read(slide.id)),[draft,setDraft]=useState<any>(null),[checked,setChecked]=useState<string[]>([]),[request,setRequest]=useState(()=>read(slide.id)?.request||''),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ const input=useRef<HTMLInputElement>(null);const working=draft?.state==='parsing'||draft?.groups?.some((g:any)=>g.state==='running');
+ useEffect(()=>{if(!task)return;let live=true;async function refresh(){try{const d=await api('/api/references/'+task!.id);if(live)setDraft(d)}catch(e){if(live)setError(String(e))}}void refresh();const timer=setInterval(refresh,1500);return()=>{live=false;clearInterval(timer)}},[task?.id]);
+ useEffect(()=>{if(draft?.state==='ready')setChecked(old=>old.length?old:task?.groupIds||draft.groups.map((g:any)=>g.id))},[draft?.id,draft?.state]);
+ function remember(patch:Partial<Task>){if(!task)return;const next={...task,...patch};localStorage.setItem(key(slide.id),JSON.stringify(next));setTask(next)}
+ function choose(ids:string[]){setChecked(ids);remember({groupIds:ids})}
+ async function perform(fn:()=>Promise<void>){if(busy)return;setBusy(true);setError('');try{await fn()}catch(e){setError(String(e))}finally{setBusy(false)}}
+ async function upload(file:File){await perform(async()=>{const r=await fetch('/api/references?name='+encodeURIComponent(file.name),{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:file});const d=await r.json();if(!r.ok)throw Error(d.error);const next={id:d.id,target:structuredClone(slide)};localStorage.setItem(key(slide.id),JSON.stringify(next));setTask(next);setDraft(d);setChecked([])})}
+ const selected=draft?.groups?.filter((g:any)=>checked.includes(g.id))||[];const result=selected.length===1?selected[0]:null;
+ async function generate(){await perform(async()=>{let group=selected[0];if(selected.length>1){const d=await api('/api/references/'+task!.id,'PATCH',{merge:checked});group=d.groups.find((g:any)=>!draft.groups.some((old:any)=>old.id===g.id));setDraft(d);choose([group.id])}await api('/api/references/'+task!.id,'PATCH',{groupId:group.id,keepOne:true,request:request+'\n生成当前这一页演示页面，保留为一页，使用品牌母版。'});setDraft(await api('/api/references/'+task!.id+'/generate','POST',{groupId:group.id}))})}
+ return <div className="page-generation"><h2>参考材料，生成当前页</h2><p>上传 → 选择内容并描述需求 → 对比结果 → 替换当前页。不会创建版本。</p>{error&&<p role="alert" className="error">{error}</p>}
+ {!task?<div className="import-upload-zone" onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();if(!busy&&e.dataTransfer.files[0])void upload(e.dataTransfer.files[0])}}><Upload size={30}/><h3>{busy?'正在上传参考材料…':'拖入参考截图、PPTX 或 PDF'}</h3><p>参考原稿的内容，用品牌母版重新组织和设计。</p><button className="primary" disabled={busy} onClick={()=>input.current?.click()}>选择文件</button><input hidden ref={input} type="file" accept=".pptx,.pdf,.png,.jpg,.jpeg,.webp" onChange={e=>{if(e.target.files?.[0])void upload(e.target.files[0])}}/></div>:<>
+ <div className="generation-status" role="status"><b>{working?draft?.progress||'Codex 正在生成本页…':result?.slides?.length?'生成结果已就绪，请检查后应用':draft?.state==='failed'?'参考材料读取失败':'参考材料已上传'}</b><p>{working?'可以关闭窗口，画布上的任务入口会持续显示进度。':'关闭后可从当前页的任务入口继续。'}</p></div>
+ {draft?.error&&<p role="alert">{draft.error}</p>}{draft?.state==='failed'&&<button disabled={busy} onClick={()=>perform(async()=>setDraft(await api('/api/references/'+task.id+'/retry','POST',{})))}>重新读取材料</button>}
+ {draft?.state==='ready'&&<><div className="import-page-grid">{draft.groups.map((g:any)=><label key={g.id} className={checked.includes(g.id)?'chosen':''}><input type="checkbox" disabled={busy||working} checked={checked.includes(g.id)} onChange={e=>choose(e.target.checked?[...checked,g.id]:checked.filter(id=>id!==g.id))}/><img src={draft.pages.find((p:any)=>p.number===g.pages[0])?.preview} alt={'参考第'+g.pages.join('、')+'页'}/><span>参考第 {g.pages.join('、')} 页</span></label>)}</div><label className="field">这一页想表达什么？<textarea value={request} onChange={e=>{setRequest(e.target.value);remember({request:e.target.value})}} placeholder="例如：突出教研团队的专业经验，保留人物与关键数字，用人物卡展示。可留空，让 Codex 根据参考材料设计。"/></label><button className="primary" disabled={busy||working||!selected.length} onClick={generate}><RefreshCw size={16}/>{result?.slides?.length?'按要求重新生成':'生成当前页'}</button>
+ {result?.error&&<p role="alert" className="error">{result.error}</p>}{!!result?.slides?.length&&<section className="page-generation-result"><h3>生成结果</h3>{result.slides.map((s:Slide)=><Scene key={s.id} s={s}/>)}<p>{result.reason}</p>{result.questions?.map((q:string,i:number)=><p key={i}>待核对：{q}</p>)}{result.slides.length!==1&&<p role="alert">生成了多页，请重新生成一页后再替换。</p>}<button className="primary wide" disabled={busy||working||result.slides.length!==1} onClick={()=>perform(async()=>{await onApply({...result.slides[0],adaptation:{reason:result.reason||'',questions:result.questions||[]}},task.target);localStorage.removeItem(key(slide.id))})}>确认并替换当前页</button><p>保留当前页的位置与章节，支持撤销；已有版本保持不变。</p></section>}</>}
+ {!working&&<button disabled={busy} onClick={()=>{localStorage.removeItem(key(slide.id));setTask(null);setDraft(null);setChecked([])}}>换一份参考材料</button>}
+ </>}
+ </div>
+}
