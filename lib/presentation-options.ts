@@ -15,7 +15,7 @@ export type VariantId=typeof presentationCategories[number]['variants'][number];
 export const presentationVariants:Record<VariantId,{label:string;hint:string;kind:ContentKind;layout:NonNullable<ContentPresentation['layout']>}>={
  cover:{label:'封面',hint:'整份演示的开场主张',kind:'point',layout:'cover'},
  chapter:{label:'章节开场',hint:'用醒目的倾斜大标题引入新话题',kind:'point',layout:'chapter'},
- point:{label:'观点与解释',hint:'一句主张，配必要的解释',kind:'point',layout:'auto'},
+ point:{label:'重点强调',hint:'深底白字，突出一句主张与必要的解释',kind:'point',layout:'spotlight'},
  image:{label:'大图展示',hint:'正文区域留给图片、GIF 或视频',kind:'visual',layout:'image'},
  balanced:{label:'图文并重',hint:'左侧约 1/3 讲解，右侧展示素材',kind:'visual',layout:'balanced'},
  text:{label:'突出文字',hint:'左侧约 3/5 讲解，素材辅助',kind:'visual',layout:'text'},

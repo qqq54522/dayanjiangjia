@@ -28,10 +28,10 @@ test('an empty page can intentionally select a point without being classified as
  const s={...initial.slides[0],content:{kind:'point',goal:'',summary:'',items:[]}};
  assert.equal(slideVariant(applyVariant(s,'point')),'point');
 });
-test('point uses one public preset while older emphasis pages remain readable and unchanged',()=>{
+test('point uses one dark preset while older light pages remain readable and unchanged',()=>{
  assert.deepEqual(presentationCategories.find(c=>c.id==='point').variants,['point']);
  assert.ok(!('spotlight' in presentationVariants));
- const old={...initial.slides[0],content:{kind:'point',goal:'观点',summary:'',items:[],presentation:{layout:'spotlight'}}};
+ const old={...initial.slides[0],content:{kind:'point',goal:'观点',summary:'',items:[],presentation:{layout:'auto'}}};
  const before=JSON.stringify(old);assert.ok(validSlide(old));assert.equal(slideCategory(old).id,'point');assert.equal(JSON.stringify(old),before);
- assert.ok(!styleExamples(initial.slides).some(s=>s.content?.presentation?.layout==='spotlight'));
+ const examples=styleExamples(initial.slides).filter(s=>slideCategory(s).id==='point');assert.equal(examples.length,1);assert.equal(examples[0].content.presentation.layout,'spotlight');assert.equal(applyVariant(old,'point').content.presentation.layout,'spotlight');
 });
