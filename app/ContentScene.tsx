@@ -34,6 +34,9 @@ export default function ContentScene({s,interactive=true}:{s:Slide;interactive?:
   </section>;
  }
  const visuals=main.filter(i=>i.media);
+ const carousel=s.composition?.sequence?s.composition.sequence==='carousel':split;
+ const mediaGroup=()=>carousel&&visuals.length===1?media(visuals[0]):carousel?<Gallery s={{...s,media:visuals[0]?.media||'',gallery:visuals.slice(1).map(i=>i.media!),subtitle:s.title}} interactive={interactive}/>:<div className={`content-image-stage ${visuals.length>1?'multi':''}`} style={{'--content-columns':Math.min(visuals.length||1,3)} as React.CSSProperties}>{visuals.map(i=><div className="content-image-cell" key={i.id}>{media(i)}{interactive&&i.crop&&i.interaction!=='none'&&<button className="content-detail-hit" data-detail-open={c.items.indexOf(i)} aria-label={`放大${i.title||'图片'}`}/>}</div>)}</div>;
+ const chartValues=main.map(i=>i.value?.trim()&&Number.isFinite(Number(i.value))?Number(i.value):null),chartMax=Math.max(1,...chartValues.filter((v):v is number=>v!==null).map(Math.abs));
  return <article ref={ref} className={`scene comic-default semantic-scene content-${c.kind} content-layout-${layout} ${opening?'comic-chapter':''} ${summary?'has-summary':''} ${stepMedia?'has-step-media':''} ${s.chapter?.visible?'has-chapter':''} ${numbered?'numbered-cards':''} ${main.some(i=>i.value)?'metric-cards':''}`} data-content-count={main.length} data-content-columns={columns}>
   <div className="comic-backdrop" aria-hidden="true">{s.background&&<img src={s.background} alt=""/>}</div><div className="comic-dots" aria-hidden="true"/>
   <div className="scene-brand"><img className="logo-light" src={brandLogo} alt="洋葱学园"/><img className="logo-dark" src={brandLogoWhite} alt="洋葱学园"/></div>
@@ -42,10 +45,11 @@ export default function ContentScene({s,interactive=true}:{s:Slide;interactive?:
    <h1 className="comic-title"><span>{s.title}</span></h1>
    <div className="content-main">
     {showSubtitle&&s.subtitle&&!image&&!split&&<p className="content-lead">{s.subtitle}</p>}
-    {image?<div className={`content-image-stage ${visuals.length>1?'multi':''}`} style={{'--content-columns':Math.min(visuals.length||1,3)} as React.CSSProperties}>{visuals.map(i=><div className="content-image-cell" key={i.id}>{media(i)}{interactive&&i.crop&&i.interaction!=='none'&&<button className="content-detail-hit" data-detail-open={c.items.indexOf(i)} aria-label={`放大${i.title||'图片'}`}/>}</div>)}</div>:
+    {image?mediaGroup():
+     layout==='chart'?<div className="semantic-chart">{main.map((item,i)=><section className="semantic-chart-row" key={item.id}><h2>{item.title}</h2><div className="semantic-chart-track"><i style={{width:chartValues[i]===null?'0%':Math.abs(chartValues[i]!)/chartMax*50+'%',marginLeft:chartValues[i]!==null&&chartValues[i]!<0?(50-Math.abs(chartValues[i]!)/chartMax*50)+'%':'50%'}}/></div><strong>{item.value||'—'}</strong>{item.body&&<p>{item.body}</p>}</section>)}</div>:
      c.kind==='table'&&c.table?<div className="semantic-table-wrap"><table className="semantic-table"><thead><tr>{c.table.headers.map((h,i)=><th key={i}>{h}</th>)}</tr></thead><tbody>{c.table.rows.map((r,i)=><tr key={i}>{r.map((cell,j)=><td key={j}>{cell}</td>)}</tr>)}</tbody></table></div>:
      <div className="content-items" style={{'--content-columns':columns} as React.CSSProperties}>{showSubtitle&&s.subtitle&&split&&<p className="content-lead">{s.subtitle}</p>}{main.map(card)}</div>}
-    {split&&<div className="content-split-media">{visuals.length===1?media(visuals[0]):<Gallery s={{...s,media:visuals[0]?.media||'',gallery:visuals.slice(1).map(i=>i.media!),subtitle:s.title}} interactive={interactive}/>}</div>}
+    {split&&<div className="content-split-media">{mediaGroup()}</div>}
     {stepMedia&&<div className="step-media-stage">{main.map((item,i)=><div key={item.id} data-step-media={i} hidden={i!==0}>{item.media?media(item):<p>{item.body}</p>}</div>)}</div>}
    </div>
    {summary&&<div className="content-summary">{summary}</div>}

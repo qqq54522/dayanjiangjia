@@ -36,7 +36,7 @@
 
 ## 4. 表达结构与视觉版式分开
 
-表达结构 content.kind：point、visual、cards、compare、process、table。视觉版式 content.presentation.layout：auto、cover、chapter、image、balanced、text、cards。
+表达结构 content.kind：point、visual、cards、compare、process、table。视觉版式 content.presentation.layout：auto、cover、chapter、image、balanced、text、cards、list、chart、spotlight。
 
 - cover / chapter：沿用已确认的倾斜漫画标题与品牌背景。封面有主张，章节页负责转场，不套普通白卡片。
 - image：标题以下留给图片/GIF/视频。保持完整比例；只有明确获准才裁剪。主画面不放重复图注、上下小字或资料按钮。
@@ -72,3 +72,8 @@ details 默认保存在编辑端，不自动生成画布底部的小字入口。
 程序回归：规则确实进入两条模型请求；版式字段、关键模块、素材、撤销和 ZIP 往返不丢失；五项短卡不因数量被判为必须拆页；长文仍提示密度；关键数字移出主画面有明确提醒。
 
 视觉回归：封面、章节、大图、左右图文、编号分栏、数据、五项总览、人物卡。检查编辑预览、16:9 播放和手机贴片比例；检查标题、正文、图片边界及主画面的实际信息重点。模型建议与测试通过都不能代替视觉验收。
+
+
+### 统一的用途入口
+
+样式示例和编辑器共用六类用途：封面与章节、观点与重点、图文与素材、列表与卡片、流程步骤、对比与数据。不要把同一用途的不同布局作为平级类别。封面/章节用 cover/chapter；观点用 point + auto/spotlight；图文用 visual + image/balanced/text；并列列表用 cards + list/cards；有先后关系才用 process；差异与数据用 compare、compare + chart 或 table。条形图的 value 应为相同单位的有限数值，单位在正文说明，禁止编造数值。切换只调整呈现，不删除模块、锁定、素材或来源。
