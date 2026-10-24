@@ -1,5 +1,6 @@
 import type {Workspace,Version} from './deck.ts';
 export function captureVersion(doc:Workspace,name:string,id:string=crypto.randomUUID()):Version{
+ if(!doc.slides.length)throw Error('请先添加页面，再保存版本');
  if(!name.trim())throw Error('请填写版本名称');
  return {settings:structuredClone(doc.settings),id,name:name.trim(),time:new Date().toISOString(),slides:structuredClone(doc.slides),comments:structuredClone(doc.comments)};
 }

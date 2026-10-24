@@ -37,9 +37,9 @@ test('editor separates on-screen content from reference material and preserves o
   const{Scene}=await vite.ssrLoadModule('/app/Scene.tsx');const{default:ContentEditor}=await vite.ssrLoadModule('/app/ContentEditor.tsx');
   const s={...initial.slides[0],content:{kind:'point',goal:'定位',summary:'',presentation:{layout:'cover',evidence:false},items:[{id:'main',title:'主张',body:'解释',detail:'',placement:'main'},{id:'ref',title:'备稿参考',body:'',detail:'仅用于备稿的完整资料正文',placement:'detail'}]}};
   const editor=renderToStaticMarkup(React.createElement(ContentEditor,{s,doc:{...initial,slides:[s]},change:()=>{throw Error('Rendering must not change data')},tab:'text'}));
-  assert.ok(editor.includes('查看备稿与参考资料（2）'));assert.ok(!editor.includes('class="module-row"'));assert.ok(!editor.includes('仅用于备稿的完整资料正文'));assert.ok(!editor.includes('展示位置'));
+  assert.ok(editor.includes('查看补充文字资料（2）'));assert.ok(!editor.includes('class="module-row"'));assert.ok(!editor.includes('仅用于备稿的完整资料正文'));assert.ok(!editor.includes('展示位置'));
   const renderEditor=(slide,tab)=>renderToStaticMarkup(React.createElement(ContentEditor,{s:slide,doc:{...initial,slides:[slide]},change:()=>{throw Error('Rendering must not change data')},tab}));
-  const reference=renderEditor(s,'reference');assert.ok(reference.includes('当前版式暂不展示的正文'));assert.ok(reference.includes('仅用于备稿的完整资料正文'));assert.ok(reference.includes('value="主张"'));assert.ok(reference.includes('切换为卡片页并展示'));assert.ok(!reference.includes('模块 01'));
+  const reference=renderEditor(s,'reference');assert.ok(reference.includes('暂存的原文'));assert.ok(reference.includes('仅用于备稿的完整资料正文'));assert.ok(reference.includes('value="主张"'));assert.ok(reference.includes('切换为卡片页并展示'));assert.ok(!reference.includes('模块 01'));
   const cards={...s,content:{...s.content,kind:'cards',presentation:{layout:'cards'}}};const text=renderEditor(cards,'text');assert.equal((text.match(/class="module-row"/g)||[]).length,1);assert.ok(text.includes('value="主张"'));assert.ok(!text.includes('value="备稿参考"'));assert.ok(!text.includes('仅用于备稿的完整资料正文'));assert.ok(renderEditor(cards,'reference').includes('移到页面正文'));
 
   const render=()=>renderToStaticMarkup(React.createElement(Scene,{s}));

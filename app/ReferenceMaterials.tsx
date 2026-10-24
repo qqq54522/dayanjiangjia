@@ -1,18 +1,17 @@
-import React from 'react';
+import React,{useRef} from 'react';
 import {Plus,Trash2,ArrowUpRight,ImagePlus} from 'lucide-react';
 import {contentEditingGroups,type ContentItem,type SlideContent} from '../lib/content';
 
 export default function ReferenceMaterials({content,update,edit,upload,promote}:{content:SlideContent;update:(c:SlideContent)=>void;edit:(id:string,p:Partial<ContentItem>)=>void;upload:(id:string,file:File)=>Promise<void>;promote:(id:string)=>void}){
+ const textFields=useRef(new Map<string,'body'|'detail'>());
  const groups=contentEditingGroups(content),count=groups.references.length+groups.retained.length;
- function entry(x:ContentItem,retained=false){const locked=content.lockedItemIds?.includes(x.id);return <article className="reference-entry" key={x.id}>
-  <header><b>{x.title||'未命名资料'}</b><span>{retained?'当前版式未展示':'参考资料'}</span><button aria-label={`删除资料：${x.title||'未命名资料'}`} title={locked?'此资料已锁定，请先解除锁定':'删除资料'} disabled={locked} onClick={()=>update({...content,items:content.items.filter(i=>i.id!==x.id)})}><Trash2 size={16}/></button></header>
-  <label className="field">资料名称<input value={x.title} onChange={e=>edit(x.id,{title:e.target.value})}/></label>
-  <label className="field">摘要 / 原正文<textarea rows={2} value={x.body} onChange={e=>edit(x.id,{body:e.target.value})}/></label>
-  {x.value&&<label className="field">保留的数字<input value={x.value} onChange={e=>edit(x.id,{value:e.target.value})}/></label>}
-  <label className="field">参考说明<textarea rows={3} value={x.detail} onChange={e=>edit(x.id,{detail:e.target.value})}/></label>
+ function entry(x:ContentItem,retained=false){if(!textFields.current.has(x.id))textFields.current.set(x.id,x.body?'body':'detail');const field=textFields.current.get(x.id)!;const locked=content.lockedItemIds?.includes(x.id);return <article className="reference-entry" key={x.id}>
+  <header><b>{x.title||'文字参考'}</b><span>{retained?'当前版式未展示':'参考资料'}</span><button aria-label={`删除资料：${x.title||'文字参考'}`} title={locked?'此资料已锁定，请先解除锁定':'删除资料'} disabled={locked} onClick={()=>update({...content,items:content.items.filter(i=>i.id!==x.id)})}><Trash2 size={16}/></button></header>
+  <label className="field">参考内容<textarea rows={4} placeholder="粘贴事实、原文或补充说明。想让 Codex 怎么使用这些内容，请写在上方的需求框里。" value={x[field]} onChange={e=>edit(x.id,{[field]:e.target.value})}/></label>
+  {(x.title||x.value||(x.body&&x.detail))&&<details className="reference-original"><summary>保留的原始信息</summary><label className="field">原名称<input value={x.title} onChange={e=>edit(x.id,{title:e.target.value})}/></label>{x.value&&<label className="field">原数字<input value={x.value} onChange={e=>edit(x.id,{value:e.target.value})}/></label>}{x.body&&x.detail&&<label className="field">原补充说明<textarea value={x.detail} onChange={e=>edit(x.id,{detail:e.target.value})}/></label>}</details>}
   <label className="reference-upload" onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();const file=e.dataTransfer.files[0];if(file)void upload(x.id,file)}}>
    {x.media?(/\.mp4$/i.test(x.media)?<video src={x.media} muted playsInline preload="metadata"/>:<img src={x.media} alt={x.title||'参考素材'}/>):<ImagePlus size={22}/>}
-   <span>{x.media?'点击或拖入替换素材':'点击或拖入参考图片、GIF、视频'}</span><input aria-label={`参考素材：${x.title||'未命名资料'}`} type="file" accept="image/png,image/jpeg,image/webp,image/gif,video/mp4" onChange={e=>{const f=e.target.files?.[0];e.target.value='';if(f)void upload(x.id,f)}}/>
+   <span>{x.media?'点击或拖入替换素材':'点击或拖入参考图片、GIF、视频'}</span><input aria-label={`参考素材：${x.title||'文字参考'}`} type="file" accept="image/png,image/jpeg,image/webp,image/gif,video/mp4" onChange={e=>{const f=e.target.files?.[0];e.target.value='';if(f)void upload(x.id,f)}}/>
   </label>
   <div className="reference-actions">
    <button onClick={()=>promote(x.id)}><ArrowUpRight size={15}/>{groups.bodyVisible?'移到页面正文':'切换为卡片页并展示'}</button>
@@ -22,11 +21,11 @@ export default function ReferenceMaterials({content,update,edit,upload,promote}:
   </div>
  </article>}
  return <details className="reference-materials">
-  <summary>备稿与参考资料 <span>{count}</span></summary>
-  <p>供你备稿和 Codex 理解需求；改稿时自动附带，不要求观众在页面上看到。</p>
-  <label className="field">本页讲述意图（仅编辑端）<textarea rows={2} value={content.goal} onChange={e=>update({...content,goal:e.target.value})}/></label>
-  {groups.retained.length>0&&<section><h4>当前版式暂不展示的正文</h4><p className="reference-help">保留原内容以便切换版式。若只用于备稿，可设为“仅作参考”。大图页的素材仍可在画面中展示。</p>{groups.retained.map(x=>entry(x,true))}</section>}
-  <section><h4>参考文字与素材</h4>{groups.references.map(x=>entry(x))}<button className="reference-add" onClick={()=>update({...content,items:[...content.items,{id:crypto.randomUUID(),title:'新的参考资料',body:'',detail:'',placement:'detail'}]})}><Plus size={16}/>添加参考资料</button></section>
+  <summary>补充文字资料 <span>{count}</span></summary>
+  <p>可选：保存不直接上屏的原文、事实和备稿笔记。改稿时自动附带。</p>
+  {content.goal&&<details><summary>之前保存的讲述意图</summary><textarea aria-label="之前保存的讲述意图" rows={2} value={content.goal} onChange={e=>update({...content,goal:e.target.value})}/></details>}
+  {groups.retained.length>0&&<section><h4>暂存的原文</h4><p className="reference-help">这些文字暂未放进当前画面。可以继续保留作参考，也可以移回正文。</p>{groups.retained.map(x=>entry(x,true))}</section>}
+  <section>{groups.references.map(x=>entry(x))}<button className="reference-add" onClick={()=>update({...content,items:[...content.items,{id:crypto.randomUUID(),title:'',body:'',detail:'',placement:'detail'}]})}><Plus size={16}/>添加文字资料</button></section>
   {groups.references.length>0&&<label className="field">演示时的资料入口<select value={content.presentation?.evidence?'yes':'no'} onChange={e=>update({...content,presentation:{...content.presentation,evidence:e.target.value==='yes'}})}><option value="no">关闭 · 只供备稿和改稿</option><option value="yes">开启 · 点按查看补充资料</option></select></label>}
  </details>;
 }

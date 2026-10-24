@@ -48,5 +48,5 @@ export function contentEditingGroups(c:SlideContent){
  const layout=contentLayout(c),opening=layout==='cover'||layout==='chapter';
  const main=c.items.filter(i=>i.placement!=='detail'),references=c.items.filter(i=>i.placement==='detail');
  const bodyVisible=!opening&&layout!=='image'&&c.kind!=='table';
- return {bodyVisible,opening,body:bodyVisible?main:[],retained:bodyVisible?[]:main,references,media:opening?[]:main,summaryVisible:!opening&&layout!=='image'};
+ return {bodyVisible,opening,body:bodyVisible?main:[],retained:bodyVisible?[]:main.filter(i=>i.title.trim()||i.body.trim()||i.detail.trim()||i.value||i.media),references,media:opening?[]:main,summaryVisible:!opening&&layout!=='image'};
 }

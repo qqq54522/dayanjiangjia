@@ -31,10 +31,10 @@ const server=http.createServer(async(req,res)=>{try{
   if(req.method==='GET')return send(res,200,conversions.read(id));
   const b=await body(req);
   if(req.method!=='POST'&&action)return send(res,405,{error:'请使用 POST 提交转换操作'});
-  if(action==='generate-all')return send(res,202,conversions.generateAll(id,codex.status().settings));
+  if(action==='generate-all')return send(res,202,conversions.generateAll(id,codex.status().settings,b.groupIds));
   if(action==='generate')return send(res,202,conversions.generate(id,b.groupId,codex.status().settings));
   if(action==='retry')return send(res,202,conversions.retry(id));
-  if(action==='version')return send(res,200,conversions.version(id,b.name));
+  if(action==='version')return send(res,200,conversions.version(id,b.name,b.groupIds));
   if(req.method==='PATCH')return send(res,200,conversions.patch(id,b));
  }
  if(url.pathname==='/api/conversion/cancel'&&req.method==='POST')return send(res,200,conversions.cancel());
