@@ -27,3 +27,16 @@ test('HTTP upload → save → ZIP → second workspace; byte ranges, isolation 
  assert.equal((await fetch(a.base+'/fonts.css')).status,200);assert.equal((await fetch(a.base+'/')).status,200);
  }finally{await a.stop();await b.stop()}
 });
+
+test('reference import and review stay separate from the current draft and fixed versions',async()=>{
+ const a=await start();try{const before=await (await fetch(a.base+'/api/workspace')).json();const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a9xkAAAAASUVORK5CYII=','base64');
+ const r=await fetch(a.base+'/api/references?name=reference.png',{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:png});assert.equal(r.status,202);const d=await r.json();assert.equal(d.state,'ready');assert.equal(d.pages.length,1);assert.equal((await fetch(a.base+d.pages[0].preview)).status,200);
+ const list=await (await fetch(a.base+'/api/references')).json();assert.equal(list[0].id,d.id);
+ assert.equal((await fetch(a.base+'/api/references/'+d.id+'/version',{method:'POST',headers:{'Content-Type':'application/json'},body:'{"name":"unreviewed"}'})).status,400);
+ assert.equal((await fetch(a.base+'/api/references/'+d.id+'/generate',{method:'PATCH',headers:{'Content-Type':'application/json'},body:'{}'})).status,405);
+ const rejected=await fetch(a.base+'/api/references/'+d.id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({groupId:d.groups[0].id,decision:'rejected'})});assert.equal(rejected.status,200);
+ assert.deepEqual(await (await fetch(a.base+'/api/workspace')).json(),before);
+ assert.equal((await fetch(a.base+'/api/references?name=old.ppt',{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:png})).status,400);
+ assert.equal((await fetch(a.base+'/api/references?name=reference.png',{method:'POST',headers:{'Content-Type':'application/octet-stream',Origin:'https://elsewhere.example'},body:png})).status,403);
+ }finally{await a.stop()}
+});

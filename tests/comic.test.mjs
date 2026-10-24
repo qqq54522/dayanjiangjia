@@ -19,3 +19,5 @@ test('background only accepts managed local media references',()=>{
 });
 
 test('tag style defaults to dark and only accepts supported values',()=>{assert.ok(validSlide(initial.slides[0]));assert.ok(validSlide({...initial.slides[0],tagStyle:'blue'}));assert.equal(validSlide({...initial.slides[0],tagStyle:'red'}),false);});
+
+test('semantic presentation never invokes legacy font shrinking in offline playback',async()=>{const {initComic}=await import('../lib/comic.ts');const scene={classList:{contains:c=>['comic-default','semantic-scene'].includes(c)},querySelector(){throw Error('must not measure or shrink semantic text')}};assert.equal(initComic(scene),undefined)});

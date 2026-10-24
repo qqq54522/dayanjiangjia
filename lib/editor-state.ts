@@ -1,6 +1,6 @@
 import type {Workspace} from './deck.ts';
-type Draft=Pick<Workspace,'title'|'slides'|'comments'|'proposals'>;
-const draft=(d:Workspace):Draft=>({title:d.title,slides:d.slides,comments:d.comments,proposals:d.proposals});
+type Draft=Pick<Workspace,'title'|'slides'|'comments'|'proposals'|'settings'>;
+const draft=(d:Workspace):Draft=>({settings:d.settings,title:d.title,slides:d.slides,comments:d.comments,proposals:d.proposals});
 const equal=(a:unknown,b:unknown)=>JSON.stringify(a)===JSON.stringify(b);
 export class EditorState{
  data:Workspace;revision:number;past:Draft[]=[];future:Draft[]=[];dirty=false;saving=false;error='';conflict=false;

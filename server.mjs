@@ -1,4 +1,5 @@
 import http from 'node:http';
+import {createConversions} from './lib/conversion.mjs';
 import {readFileSync,existsSync,mkdirSync,statSync,createReadStream} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -14,6 +15,7 @@ const themeFile=path.join(dataDir,'theme','background.png');
 const defaultBackground=existsSync(themeFile)?saveMedia(mediaDir,readFileSync(themeFile)):undefined;
 const workspaceView=()=>{const v=store.read();if(defaultBackground)v.data.slides=v.data.slides.map(s=>({...s,background:s.background??defaultBackground}));return v};
 const codex=createCodexBridge({dir:dataDir,store});
+const conversions=createConversions({dir:dataDir});
 const send=(res,status,data)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(data))};
 const raw=async(req,limit=Infinity)=>{let size=0;const chunks=[];for await(const b of req){size+=b.length;if(size>limit)throw Object.assign(Error('上传文件超过大小限制'),{status:413});chunks.push(b)}return Buffer.concat(chunks)};
 const body=async req=>JSON.parse((await raw(req,10*1024*1024)).toString());
@@ -21,7 +23,21 @@ const server=http.createServer(async(req,res)=>{try{
  const allowed=new Set([`127.0.0.1:${port}`,`localhost:${port}`]);if(!allowed.has(req.headers.host))return send(res,403,{error:'仅允许本机访问'});
  if(req.headers.origin&&!['http://127.0.0.1:'+port,'http://localhost:'+port].includes(req.headers.origin))return send(res,403,{error:'不接受跨站请求'});
  const url=new URL(req.url,'http://127.0.0.1:'+port);
- if(!['GET','HEAD'].includes(req.method)&&!(req.headers['content-type']?.startsWith('application/json')||(['/api/media','/api/import'].includes(url.pathname)&&['application/zip','application/octet-stream','video/mp4'].includes(req.headers['content-type']))))return send(res,415,{error:'需要 JSON 请求'});
+ if(!['GET','HEAD'].includes(req.method)&&!(req.headers['content-type']?.startsWith('application/json')||(['/api/media','/api/import','/api/references'].includes(url.pathname)&&['application/zip','application/octet-stream','video/mp4'].includes(req.headers['content-type']))))return send(res,415,{error:'需要 JSON 请求'});
+ if(url.pathname==='/api/references'&&req.method==='GET')return send(res,200,conversions.list());
+ if(url.pathname==='/api/references'&&req.method==='POST')return send(res,202,conversions.upload(await raw(req),url.searchParams.get('name')||'source',{background:defaultBackground,settings:workspaceView().data.settings}));
+ const refMatch=/^\/api\/references\/([a-f0-9-]{36})(?:\/(generate|generate-all|retry|version))?$/.exec(url.pathname);
+ if(refMatch){const [,id,action]=refMatch;
+  if(req.method==='GET')return send(res,200,conversions.read(id));
+  const b=await body(req);
+  if(req.method!=='POST'&&action)return send(res,405,{error:'请使用 POST 提交转换操作'});
+  if(action==='generate-all')return send(res,202,conversions.generateAll(id,codex.status().settings));
+  if(action==='generate')return send(res,202,conversions.generate(id,b.groupId,codex.status().settings));
+  if(action==='retry')return send(res,202,conversions.retry(id));
+  if(action==='version')return send(res,200,conversions.version(id,b.name));
+  if(req.method==='PATCH')return send(res,200,conversions.patch(id,b));
+ }
+ if(url.pathname==='/api/conversion/cancel'&&req.method==='POST')return send(res,200,conversions.cancel());
  if(url.pathname==='/api/codex'&&req.method==='GET')return send(res,200,codex.status());
  if(url.pathname==='/api/codex/settings'&&req.method==='PUT')return send(res,200,codex.update(await body(req)));
  if(url.pathname==='/api/codex/start'&&req.method==='POST')return send(res,202,codex.start(await body(req)));
@@ -30,7 +46,7 @@ const server=http.createServer(async(req,res)=>{try{
  if(url.pathname==='/api/workspace'&&req.method==='GET')return send(res,200,workspaceView());
  if(url.pathname==='/api/workspace'&&req.method==='PUT'){const b=await body(req);return send(res,200,store.save(b.data,b.revision))}
  if(url.pathname==='/api/proposals'&&req.method==='POST')return send(res,200,store.propose(await body(req)));
- if(url.pathname==='/api/export'&&req.method==='GET'){let data=workspaceView().data;const versionId=url.searchParams.get('version');if(versionId!==null){const version=data.versions.find(v=>v.id===versionId);if(!version)return send(res,404,{error:'此演示版本不存在，请刷新版本列表'});data={...data,slides:version.slides,comments:version.comments||[],proposals:[],versions:[version]}}const zip=pack(data,mediaDir,fontDir);res.writeHead(200,{'Content-Type':'application/zip','Content-Disposition':'attachment; filename=deck.deck.zip','Cache-Control':'no-store'});return res.end(zip)}
+ if(url.pathname==='/api/export'&&req.method==='GET'){let data=workspaceView().data;const versionId=url.searchParams.get('version');if(versionId!==null){const version=data.versions.find(v=>v.id===versionId);if(!version)return send(res,404,{error:'此演示版本不存在，请刷新版本列表'});data={...data,slides:version.slides,settings:version.settings,comments:version.comments||[],proposals:[],versions:[version]}}const zip=pack(data,mediaDir,fontDir);res.writeHead(200,{'Content-Type':'application/zip','Content-Disposition':'attachment; filename=deck.deck.zip','Cache-Control':'no-store'});return res.end(zip)}
  if(url.pathname==='/api/import'&&req.method==='POST')return send(res,200,{data:unpack(await raw(req),mediaDir,fontDir)});
  if(url.pathname==='/api/media'&&req.method==='POST'){return send(res,200,{url:saveMedia(mediaDir,await raw(req))})}
  if(url.pathname.startsWith('/api/'))return send(res,404,{error:'未找到接口'});
@@ -53,4 +69,4 @@ const server=http.createServer(async(req,res)=>{try{
  }catch(e){send(res,e.status||400,{error:e.message})}});
 server.on('error',e=>{console.error(e.code==='EADDRINUSE'?`端口 ${port} 已占用，请关闭旧工作台后重试，或指定 PORT。`:e.message);store.close();process.exit(1)});
 server.listen(port,'127.0.0.1',()=>console.log(`洋葱学园演示工作台 http://127.0.0.1:${port}\n文稿保存在 ${dataDir}，不会上传 GitLab。`));
-for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>{codex.close();server.close(()=>{store.close();process.exit(0)})});
+for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>{codex.close();conversions.close();server.close(()=>{store.close();process.exit(0)})});

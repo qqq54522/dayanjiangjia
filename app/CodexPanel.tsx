@@ -3,7 +3,7 @@ type Settings={model:string;effort:string};
 type Job={id:string;state:string;message:string;model:string;effort:string};
 type State={settings:Settings;models:{id:string;efforts:string[]}[];job:Job|null};
 async function api(url:string,method='GET',body?:unknown){const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});const d=await r.json();if(!r.ok)throw Error(d.error||'请求失败');return d as State;}
-export default function CodexPanel({disabled,prepare,onComplete}:{disabled:boolean;prepare:()=>Promise<{revision:number;scope:string;request:string}|null>;onComplete:(autoPreview:boolean)=>void}){
+export default function CodexPanel({disabled,prepare,onComplete}:{disabled:boolean;prepare:()=>Promise<{revision:number;scope:string|string[];request:string}|null>;onComplete:(autoPreview:boolean)=>void}){
  const [state,setState]=useState<State|null>(null),[settings,setSettings]=useState<Settings>({model:'gpt-6-astra',effort:'medium'}),[error,setError]=useState(''),[sending,setSending]=useState(false),[pending,setPending]=useState(false);
  const seen=useRef(''),complete=useRef(onComplete),alive=useRef(true);complete.current=onComplete;
  useEffect(()=>{alive.current=true;let timer:ReturnType<typeof setTimeout>;let first=true;async function poll(){try{const d=await api('/api/codex');if(!alive.current)return;const initialPoll=first;setState(d);if(first){setSettings(d.settings);first=false;}if(d.job?.state==='completed'&&seen.current!==d.job.id){seen.current=d.job.id;complete.current(!initialPoll);}}catch(e){if(alive.current)setError(String(e));}if(alive.current)timer=setTimeout(poll,1500);}void poll();return()=>{alive.current=false;clearTimeout(timer)};},[]);

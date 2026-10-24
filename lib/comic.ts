@@ -1,6 +1,6 @@
 /** Fit titles and variable-length copy within their reserved regions, including offline export. */
 export function initComic(scene:HTMLElement){
- if(!scene.classList.contains('comic-default'))return;
+ if(!scene.classList.contains('comic-default')||scene.classList.contains('semantic-scene'))return;
  let active=true;
  const media=scene.querySelector<HTMLImageElement|HTMLVideoElement>('.scene-media img,.scene-media video');
  const orient=()=>{if(!active||!media)return;const w=media instanceof HTMLVideoElement?media.videoWidth:media.naturalWidth,h=media instanceof HTMLVideoElement?media.videoHeight:media.naturalHeight;if(w&&h)scene.dataset.orientation=h>w*1.15?'portrait':w>h*1.15?'landscape':'square'};
