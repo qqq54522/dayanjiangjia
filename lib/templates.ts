@@ -1,4 +1,5 @@
 import type {Slide} from './deck';
+import {contentKinds} from './content.ts';
 export const pageTypes=[['hero','章节开场','倾斜大标题，适合开场与过渡'],['statement','文字讲解','白色阅读面板，承载观点与解释'],['steps','并列要点','分栏比较，展示步骤或三个观点'],['highlight','重点提示','深色面板，突出一句结论'],['chart','数据对比','横向条形图，直接标出数值'],['media','素材演示','配合素材与排版设置，展示图片或视频']] as const;
 function classicExamples(source:Slide[]):Slide[]{
  const background=source.find(s=>s.background)?.background,media=source.find(s=>s.media)?.media||source.flatMap(s=>s.content?.items||[]).find(i=>i.media&&i.placement!=='detail')?.media||'';
@@ -27,3 +28,9 @@ export function styleExamples(source:Slide[]):Slide[]{
  return [...classicExamples(source),...examples.map((e,i):Slide=>({id:crypto.randomUUID(),round:1,theme:'brand',layout:'statement',...e,points:[],media:'',gallery:[],background,note:'母版结构示意。复制后替换内容；可在素材与排版中选择编号、列数与图文布局。',source:'工作台样式示例',chapter:{id:'example-chapter',title:'表达方式',visible:i===0}}))];
 }
 export function chartPoint(text:string){const [label,raw]=text.split('|');const number=Number(raw);return {label,value:raw!==undefined&&Number.isFinite(number)?Math.max(0,Math.min(100,number)):0}}
+
+/** Resolve by the page's structure, never by a position in a separate catalog. */
+export function styleExampleInfo(s:Slide){
+ const definition=s.content?contentKinds.find(([kind])=>kind===s.content!.kind):pageTypes.find(([layout])=>layout===s.layout);
+ return {label:definition?.[1]||'自定义版式',hint:definition?.[2]||'复制示例后替换内容与素材'};
+}
