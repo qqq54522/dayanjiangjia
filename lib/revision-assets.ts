@@ -1,0 +1,3 @@
+export type RevisionAsset={id:string;url:string;name:string;targetId:string;instruction:string};
+export function validRevisionAssets(value:unknown):value is RevisionAsset[]{return Array.isArray(value)&&value.length<=24&&new Set(value.map(a=>a?.id)).size===value.length&&value.every(a=>a&&typeof a.id==='string'&&!!a.id&&typeof a.url==='string'&&/^\/media\/[\w.-]+\.(png|jpg|jpeg|webp|gif)$/i.test(a.url)&&typeof a.name==='string'&&a.name.length<=500&&typeof a.targetId==='string'&&a.targetId.length<=200&&typeof a.instruction==='string'&&a.instruction.length<=2000)}
+export function revisionAssetRequest(assets:RevisionAsset[]=[]){return assets.length?'请将本页 revisionAssets 中的图片放入页面，遵循每张图片的 targetId 和 instruction；未指定位置时合理安排，保留原有内容与默认品牌样式。':''}
