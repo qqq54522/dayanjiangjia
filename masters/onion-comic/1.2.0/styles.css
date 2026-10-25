@@ -376,3 +376,24 @@
 
 .scene.master-v12 .adaptive-item .content-step:hover,.scene.master-v12 .adaptive-item .content-step:active{background:transparent!important}
 .scene.master-v12.content-process:not(.has-step-media) .adaptive-item[data-density="brief"]{justify-content:center}
+/* Relationship matrix: all content remains visible while the presenter focuses a row or column. */
+.scene.master-v12.has-focus-matrix .content-main{top:24%;bottom:4%;display:block;background:transparent;border:0;box-shadow:none;padding:0}
+.scene.master-v12.has-focus-matrix.has-chapter .content-main{top:28%}
+.focus-matrix{height:100%;display:flex;flex-direction:column;gap:.9cqw}
+.focus-matrix table{width:100%;flex:1;table-layout:fixed;border-spacing:0;border-collapse:separate;background:#fff;border: .16cqw solid #2e2e3a;border-radius:1cqw;overflow:hidden;box-shadow:.35cqw .35cqw 0 #2e2e3a}
+.focus-matrix th,.focus-matrix td{padding:1cqw 1.6cqw;vertical-align:middle;text-align:left;border:0;border-bottom:.09cqw solid #d7e0e4;border-right:.09cqw solid #d7e0e4;color:#2e2e3a;background:#fff;transition:background .18s ease,box-shadow .18s ease}
+.focus-matrix tr:last-child>*{border-bottom:0}.focus-matrix tr>*:last-child{border-right:0}
+.focus-matrix th:first-child{width:12%;padding:.7cqw}.focus-matrix thead th:nth-child(2){width:41%}
+.focus-matrix thead th{background:#2e2e3a;color:#fff;padding:.4cqw .9cqw;border-color:#ffffff25}
+.focus-matrix button{appearance:none;border:0!important;box-shadow:none!important;border-radius:.45cqw;background:transparent!important;color:inherit!important;font:inherit;font-weight:800;padding:.6cqw .8cqw;cursor:pointer;touch-action:manipulation;width:100%;text-align:inherit;line-height:1.2}
+.focus-matrix button:hover{background:#ffffff14!important}.focus-matrix button:focus-visible{outline:.18cqw solid #1eb2ff;outline-offset:-.18cqw}.focus-matrix button:disabled{opacity:1;cursor:default}
+.focus-matrix thead button{font-size:2.3cqw}.focus-matrix thead th:first-child button{font-size:1.65cqw;color:#d4dbe0!important}
+.focus-matrix tbody th{font-size:2.35cqw;text-align:center;background:#edf5fa}
+.focus-matrix .matrix-line{display:block;font-size:1.85cqw;line-height:1.5;font-weight:500;white-space:pre-wrap}
+.focus-matrix .matrix-line+.matrix-line{margin-top:.35cqw}
+.focus-matrix [data-matrix-col][data-focused=true],.focus-matrix tr[data-focused=true]>*,.focus-matrix .matrix-footer[data-focused=true]{background:#fff2b5;box-shadow:inset .3cqw 0 0 #ffd633}
+.focus-matrix thead th[data-focused=true]{background:#ffd633;color:#252832}
+.focus-matrix .matrix-footer{display:flex;align-items:center;gap:1.2cqw;padding:.55cqw .8cqw;background:#fff;border:.14cqw solid #2e2e3a;border-radius:.8cqw;box-shadow:.25cqw .25cqw 0 #2e2e3a}
+.focus-matrix .matrix-footer button{width:11%;flex-shrink:0;font-size:2cqw;background:#2e2e3a!important;color:white!important;text-align:center}
+.focus-matrix .matrix-footer p{margin:0;flex:1;font-size:1.9cqw;font-weight:500;letter-spacing:.05em;text-align:center;color:#2e2e3a}
+@media(prefers-reduced-motion:reduce){.focus-matrix th,.focus-matrix td{transition:none}}
