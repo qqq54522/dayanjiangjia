@@ -300,3 +300,79 @@
 .semantic-chart-track{height:2.8cqw;background:#edf1f4;border-radius:.4cqw;overflow:hidden}.semantic-chart-track i{display:block;height:100%;background:#1eb2ff;border-right:.5cqw solid #ffd526}
 
 .semantic-chart-track{background:linear-gradient(90deg,#edf1f4 49.7%,#9096a1 49.7% 50.3%,#edf1f4 50.3%);position:relative}.semantic-chart-track:after{content:'0';position:absolute;left:50%;top:100%;font-size:1cqw}.content-layout-list .content-item{justify-content:normal!important;text-align:left!important}
+
+/* Current content layout. */
+.scene.master-v12.semantic-scene:not(.comic-chapter) .comic-title{height:24%;font-size:3.8cqw;line-height:1.25}
+.scene.master-v12.semantic-scene:not(.comic-chapter) .comic-title span{padding:.55cqw 1.5cqw .7cqw}
+.scene.master-v12.semantic-scene .content-main{top:28%}
+.scene.master-v12.semantic-scene.has-chapter .content-main{top:31%}
+.scene.master-v12.semantic-scene.comic-chapter .comic-opening{inset:20% 5% 6%;gap:2cqw}
+.scene.master-v12.semantic-scene.comic-chapter .comic-opening h1{max-height:none;font-size:5.4cqw;line-height:1.28;overflow:visible}
+.scene.master-v12.semantic-scene .content-value{font-size:5.3cqw;line-height:1.2;word-break:keep-all;overflow-wrap:normal}
+.scene.master-v12.content-layout-balanced .content-value,.scene.master-v12.content-layout-text .content-value{font-size:4.2cqw}
+.scene.master-v12.content-layout-balanced .content-item,.scene.master-v12.content-layout-text .content-item{position:relative;inset:auto;width:auto;transform:none}
+.scene.master-v12.content-layout-balanced .content-items,.scene.master-v12.content-layout-text .content-items{justify-content:flex-start;padding:2cqw;gap:1.8cqw}
+.scene.master-v12.content-cards .with-media>.scene-media,.scene.master-v12.content-cards .content-crop{min-height:8cqw}
+.scene.master-v12.content-process:not(.has-step-media) .content-items{align-content:center;grid-auto-rows:auto}
+.scene.master-v12.content-process:not(.has-step-media) .content-item{min-height:17cqw}
+.scene.master-v12.content-process:not(.has-step-media) .content-step{flex:0 0 auto}
+
+.scene.master-v12.semantic-scene:not(.comic-chapter):not(.long-heading) .comic-title{height:17%;font-size:4.2cqw}
+.scene.master-v12.semantic-scene:not(.long-heading) .content-main{top:23%}
+.scene.master-v12.semantic-scene.has-chapter:not(.long-heading) .content-main{top:26%}
+
+.scene.master-v12.content-layout-balanced .content-item,.scene.master-v12.content-layout-text .content-item{flex:0 0 auto}
+
+.scene.master-v12 .comic-title span{text-wrap:balance}
+
+/* 1.2: a restrained chapter tab joins the top rule; body yellow/blue stay semantic. */
+.scene.master-v12 .chapter-ribbon{inset:0 0 auto;bottom:auto;height:0;border:0;border-top:.55cqw solid var(--chapter-color,#316457);z-index:3}
+.scene.master-v12 .chapter-ribbon span{position:absolute;left:3.5cqw;top:0;background:var(--chapter-color,#316457);color:#fff;border-radius:0 0 .65cqw .65cqw;padding:.55cqw 1.5cqw .6cqw;box-shadow:none;font-size:1.55cqw;line-height:1.2;max-width:61cqw;white-space:normal;overflow-wrap:anywhere}
+.scene.master-v12.has-chapter .comic-title{top:9%!important}
+.scene.master-v12.has-chapter:not(.long-heading) .content-main{top:28%}
+.scene.master-v12.has-chapter.long-heading .content-main{top:34%}
+/* Card rhythm: reading, message, figure and visual are different jobs. */
+.scene.master-v12 .adaptive-item{padding:2cqw;gap:1.3cqw;justify-content:flex-start;text-align:left;background:#fff}
+.scene.master-v12 .adaptive-item .card-heading{display:flex;align-items:flex-start;gap:1cqw;flex:0 0 auto;min-width:0}
+.scene.master-v12 .adaptive-item .card-heading h2,.scene.master-v12 .adaptive-item .card-heading strong{font-size:2.8cqw;line-height:1.3;text-wrap:balance;margin:0;overflow-wrap:anywhere}
+.scene.master-v12 .adaptive-item .content-number,.scene.master-v12 .adaptive-item .content-step b{width:auto;height:auto;min-width:3.3cqw;padding:.55cqw .6cqw;font-size:1.8cqw;line-height:1.1;flex:none;margin:0;border-radius:.35cqw}
+.scene.master-v12 .adaptive-item .content-body{font-size:2.2cqw;line-height:1.5;overflow-wrap:anywhere;white-space:pre-wrap;margin:0}
+.scene.master-v12 .adaptive-item .content-value{font-size:5.8cqw;line-height:1.15;overflow-wrap:anywhere;word-break:normal}
+.scene.master-v12 .adaptive-item[data-emphasis=value] .content-value{order:-1;color:#173747;font-weight:900}
+.scene.master-v12 .adaptive-item[data-emphasis=value] .card-heading h2{font-size:2.7cqw}
+.scene.master-v12 .adaptive-item[data-emphasis=body] .content-body{font-size:2.8cqw;font-weight:800;line-height:1.4}
+.scene.master-v12 .adaptive-item[data-emphasis=body] .card-heading h2{font-size:2.1cqw;color:#545664}
+.scene.master-v12 .adaptive-item[data-emphasis=title]:not(.with-media) .card-heading h2{font-size:3.3cqw}
+.scene.master-v12 .adaptive-item[data-align=center]{text-align:center!important;justify-content:center!important}
+.scene.master-v12 .adaptive-item[data-align=center] .card-heading{justify-content:center;align-items:center}
+.scene.master-v12 .adaptive-item[data-density=reading]{justify-content:flex-start!important}
+.scene.master-v12 .adaptive-item .content-body mark{color:inherit;background:linear-gradient(transparent 60%,#ffe478 60%);padding:0;font-weight:800;box-decoration-break:clone}
+.scene.master-v12 .adaptive-item.with-media .scene-media{min-height:0;flex:1 1 0}
+.scene.master-v12 .adaptive-item[data-media-layout=beside].with-media{display:grid;grid-template-columns:minmax(0,42%) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);gap:1.3cqw;align-items:start}
+.scene.master-v12 .adaptive-item[data-media-layout=beside] .card-heading{grid-column:2;grid-row:1}
+.scene.master-v12 .adaptive-item[data-media-layout=beside]>.scene-media,.scene.master-v12 .adaptive-item[data-media-layout=beside]>.content-crop{grid-column:1;grid-row:1/4;align-self:stretch;height:100%!important;min-height:0}
+.scene.master-v12 .adaptive-item[data-media-layout=beside]>.content-body,.scene.master-v12 .adaptive-item[data-media-layout=beside]>.content-value{grid-column:2;order:initial}
+.scene.master-v12 .adaptive-item[data-media-layout=beside]>.content-value{font-size:4cqw}
+.scene.master-v12.content-layout-list .adaptive-item{display:grid;grid-template-columns:minmax(0,35%) minmax(0,1fr);align-items:center;align-content:center;padding:1.4cqw 0;gap:1.2cqw 2cqw;justify-content:normal!important;text-align:left!important}
+.scene.master-v12.content-layout-list .adaptive-item .content-body{grid-column:2}
+.scene.master-v12.content-layout-list .adaptive-item.with-media{grid-template-columns:minmax(0,25%) minmax(0,32%) minmax(0,1fr)}
+.scene.master-v12.content-layout-list .adaptive-item.with-media>.scene-media,.scene.master-v12.content-layout-list .adaptive-item.with-media>.content-crop{grid-column:2;grid-row:1;min-height:0;height:100%!important;align-self:stretch}
+.scene.master-v12.content-layout-list .adaptive-item.with-media>.content-body{grid-column:3;grid-row:1}
+.scene.master-v12.content-process:not(.has-step-media) .content-items{align-content:stretch;grid-auto-rows:minmax(0,1fr)}
+.scene.master-v12.content-process .adaptive-item .content-step{flex-direction:row;gap:1cqw}
+.scene.master-v12.content-process.has-step-media .adaptive-item{padding:.7cqw 1cqw;gap:.5cqw}
+.scene.master-v12.content-process.has-step-media .adaptive-item .content-step strong{font-size:2.1cqw}
+.scene.master-v12.content-process.has-step-media .adaptive-item .content-body{font-size:1.7cqw}
+.scene.master-v12[data-content-columns="4"] .adaptive-item .card-heading h2,.scene.master-v12[data-content-columns="5"] .adaptive-item .card-heading h2{font-size:2.3cqw}
+.scene.master-v12[data-content-columns="4"] .adaptive-item .content-body,.scene.master-v12[data-content-columns="5"] .adaptive-item .content-body{font-size:2cqw}
+.scene.master-v12.content-layout-list .adaptive-item.with-value{grid-template-columns:minmax(0,30%) minmax(0,25%) minmax(0,1fr)}
+.scene.master-v12.content-layout-list .adaptive-item.with-value>.content-value{grid-column:2;grid-row:1;order:initial;font-size:4.5cqw}
+.scene.master-v12.content-layout-list .adaptive-item.with-value>.content-body{grid-column:3;grid-row:1}
+.scene.master-v12 .adaptive-item:has(.content-step[data-active=true],.content-focus-hit[data-active=true]){background:#fff8d9;border-color:#d5aa12}
+.scene.master-v12 .adaptive-item.with-media[data-emphasis=title] .card-heading h2{font-size:3.1cqw}
+.scene.master-v12 .adaptive-item.with-media[data-emphasis=body]>.scene-media{flex:.65 1 0}
+.scene.master-v12.has-chapter:not(.semantic-scene)>.comic-board,.scene.master-v12.has-chapter:not(.semantic-scene)>.scene-media{top:28%}
+.scene.master-v12.has-chapter:not(.semantic-scene).intent-balanced>.comic-caption,.scene.master-v12.has-chapter:not(.semantic-scene).intent-text>.comic-caption{top:28%}
+
+.scene.master-v12 .adaptive-item .content-step:hover,.scene.master-v12 .adaptive-item .content-step:active{background:transparent!important}
+.scene.master-v12.content-process:not(.has-step-media) .adaptive-item[data-density="brief"]{justify-content:center}

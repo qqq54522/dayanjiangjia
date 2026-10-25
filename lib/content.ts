@@ -1,10 +1,12 @@
+import {validItemDesign,type ItemDesign} from './module-layout.ts';
+import {validChapterColor,type ChapterColor} from './chapters.ts';
 import {validMediaFrame,type MediaFrame} from './media-frame.ts';
 /** Semantic content stays editable independently of the visual template. */
 export type ContentKind='point'|'visual'|'cards'|'compare'|'process'|'table';
-export type ContentItem={importance?:'key'|'support';interaction?:'none'|'detail'|'media'|'focus';placement?:'main'|'detail';id:string;title:string;body:string;detail:string;media?:string;mediaAspect?:number;mediaFrame?:MediaFrame;crop?:{x:number;y:number;width:number;height:number};value?:string;sourceIds?:string[]};
+export type ContentItem={design?:ItemDesign;importance?:'key'|'support';interaction?:'none'|'detail'|'media'|'focus';placement?:'main'|'detail';id:string;title:string;body:string;detail:string;media?:string;mediaAspect?:number;mediaFrame?:MediaFrame;crop?:{x:number;y:number;width:number;height:number};value?:string;sourceIds?:string[]};
 export type ContentPresentation={layout?:'auto'|'cover'|'chapter'|'image'|'balanced'|'text'|'cards'|'list'|'chart'|'spotlight';subtitle?:'hidden'|'visible';marker?:'auto'|'number'|'none';columns?:2|3|4|5;evidence?:boolean};
 export type SlideContent={kind:ContentKind;goal:string;summary:string;items:ContentItem[];presentation?:ContentPresentation;table?:{headers:string[];rows:string[][]};lockedItemIds?:string[]};
-export type Chapter={id:string;title:string;visible:boolean};
+export type Chapter={id:string;title:string;visible:boolean;color?:ChapterColor};
 export type SourceLink={purpose?:'content'|'structure';documentId:string;page:number;preview?:string;label:string;extractedText?:string;notes?:string};
 export type PresentationSettings={display:'screen'|'live';minutes?:number};
 export const contentKinds:readonly [ContentKind,string,string][]=[
@@ -22,12 +24,12 @@ export function numberedItems(c:SlideContent){return c.presentation?.marker==='n
 export function validContent(x:unknown):x is SlideContent{
  const c=x as SlideContent;
  return !!c&&contentKinds.some(([k])=>k===c.kind)&&text(c.goal,1000)&&text(c.summary,1600)&&(c.presentation===undefined||validPresentation(c.presentation))&&Array.isArray(c.items)&&c.items.length<=100&&
- c.items.every(i=>i&&(i.importance===undefined||['key','support'].includes(i.importance))&&(i.interaction===undefined||['none','detail','media','focus'].includes(i.interaction))&&(i.placement===undefined||['main','detail'].includes(i.placement))&&text(i.id,100)&&!!i.id&&text(i.title,500)&&text(i.body,4000)&&text(i.detail,20000)&&(i.media===undefined||i.media===''||localAsset(i.media))&&(i.mediaAspect===undefined||Number.isFinite(i.mediaAspect)&&i.mediaAspect>0&&i.mediaAspect<=30)&&(i.mediaFrame===undefined||validMediaFrame(i.mediaFrame))&&(i.crop===undefined||[i.crop.x,i.crop.y,i.crop.width,i.crop.height].every(v=>Number.isFinite(v)&&v>=0&&v<=1)&&i.crop.width>0&&i.crop.height>0&&i.crop.x+i.crop.width<=1.00001&&i.crop.y+i.crop.height<=1.00001)&&(i.value===undefined||text(i.value,500))&&(i.sourceIds===undefined||Array.isArray(i.sourceIds)&&i.sourceIds.every(s=>text(s,200))))&&
+ c.items.every(i=>i&&(i.design===undefined||validItemDesign(i.design))&&(i.importance===undefined||['key','support'].includes(i.importance))&&(i.interaction===undefined||['none','detail','media','focus'].includes(i.interaction))&&(i.placement===undefined||['main','detail'].includes(i.placement))&&text(i.id,100)&&!!i.id&&text(i.title,500)&&text(i.body,4000)&&text(i.detail,20000)&&(i.media===undefined||i.media===''||localAsset(i.media))&&(i.mediaAspect===undefined||Number.isFinite(i.mediaAspect)&&i.mediaAspect>0&&i.mediaAspect<=30)&&(i.mediaFrame===undefined||validMediaFrame(i.mediaFrame))&&(i.crop===undefined||[i.crop.x,i.crop.y,i.crop.width,i.crop.height].every(v=>Number.isFinite(v)&&v>=0&&v<=1)&&i.crop.width>0&&i.crop.height>0&&i.crop.x+i.crop.width<=1.00001&&i.crop.y+i.crop.height<=1.00001)&&(i.value===undefined||text(i.value,500))&&(i.sourceIds===undefined||Array.isArray(i.sourceIds)&&i.sourceIds.every(s=>text(s,200))))&&
  new Set(c.items.map(i=>i.id)).size===c.items.length&&
  (c.lockedItemIds===undefined||Array.isArray(c.lockedItemIds)&&c.lockedItemIds.every(id=>c.items.some(i=>i.id===id)))&&
  (c.table===undefined||Array.isArray(c.table.headers)&&c.table.headers.length>0&&c.table.headers.length<=30&&c.table.headers.every(h=>text(h,1000))&&Array.isArray(c.table.rows)&&c.table.rows.length<=300&&c.table.rows.every(r=>Array.isArray(r)&&r.length===c.table!.headers.length&&r.every(cell=>text(cell,4000))));
 }
-export function validChapter(x:unknown):x is Chapter{const c=x as Chapter;return !!c&&text(c.id,100)&&!!c.id&&text(c.title,100)&&!!c.title.trim()&&typeof c.visible==='boolean'}
+export function validChapter(x:unknown):x is Chapter{const c=x as Chapter;return !!c&&text(c.id,100)&&!!c.id&&text(c.title,100)&&!!c.title.trim()&&typeof c.visible==='boolean'&&(c.color===undefined||validChapterColor(c.color))}
 export function validSourceLink(x:unknown):x is SourceLink{const s=x as SourceLink;return !!s&&(s.purpose===undefined||['content','structure'].includes(s.purpose))&&text(s.documentId,100)&&Number.isInteger(s.page)&&s.page>0&&text(s.label,500)&&(s.extractedText===undefined||text(s.extractedText,100000))&&(s.notes===undefined||text(s.notes,20000))&&(s.preview===undefined||localAsset(s.preview))}
 export function validSettings(x:unknown):x is PresentationSettings{const s=x as PresentationSettings;return !!s&&['screen','live'].includes(s.display)&&(s.minutes===undefined||Number.isFinite(s.minutes)&&s.minutes>0&&s.minutes<=1440)}
 export function contentAssets(s:{revisionAssets?:{url:string}[];content?:SlideContent;sourceLinks?:SourceLink[]}){return [...(s.revisionAssets?.map(a=>a.url)||[]),...(s.content?.items.map(i=>i.media).filter(Boolean)||[]),...(s.sourceLinks?.map(i=>i.preview).filter(Boolean)||[])] as string[]}

@@ -1,5 +1,6 @@
+import {itemLayout,adaptiveColumns} from '../lib/module-layout';
+import {chapterColor} from '../lib/chapters';
 import {frameAspect} from '../lib/media-frame';
-import {DEFAULT_MASTER} from '../lib/masters';
 import React,{useEffect,useRef,useId} from 'react';
 import {contentLayout,contentColumns,hasDetail,numberedItems,type ContentItem} from '../lib/content';
 import type {Slide} from '../lib/deck';
@@ -9,10 +10,11 @@ import {initLogo} from '../lib/logo';
 import {Gallery} from './Scene';
 
 export default function ContentScene({s,interactive=true}:{s:Slide;interactive?:boolean}){
+ const adaptive=true;
  const clipId=useId(),ref=useRef<HTMLElement>(null),c=s.content!;
  const main=c.items.filter(i=>i.placement!=='detail'),extra=c.items.filter(i=>i.placement==='detail');
  const layout=contentLayout(c),opening=layout==='cover'||layout==='chapter',image=layout==='image',split=layout==='balanced'||layout==='text';
- const showSubtitle=c.presentation?.subtitle==='visible',numbered=numberedItems(c),columns=contentColumns(c);
+ const showSubtitle=c.presentation?.subtitle==='visible',numbered=numberedItems(c),columns=adaptive?adaptiveColumns(c,contentColumns(c)):contentColumns(c);
  const stepMedia=!opening&&!image&&!split&&c.kind==='process'&&main.some(i=>i.media);
  const evidence=c.presentation?.evidence?extra:[],summary=!opening&&!image?c.summary:'';
  useEffect(()=>{if(!ref.current)return;initLogo(ref.current);const events=interactive?initContent(ref.current):undefined;return()=>events?.()},[JSON.stringify(s),interactive]);
@@ -24,6 +26,17 @@ export default function ContentScene({s,interactive=true}:{s:Slide;interactive?:
  function detailDialog(item:ContentItem){return <dialog key={'dialog-'+item.id} className="content-detail" data-detail={c.items.indexOf(item)} aria-label={`${item.title||'素材'}详情`}><div className="content-detail-sheet"><button className="detail-return" data-detail-close aria-label="返回页面">↩</button><h2>{item.title}</h2>{item.value&&<strong className="content-value">{item.value}</strong>}{item.media&&media(item,'detail')}<p>{item.body}</p>{(item.interaction==='detail'||evidence.includes(item))&&item.detail&&<div className="content-detail-text">{item.detail}</div>}</div></dialog>}
  function card(item:ContentItem,i:number){
   const details=hasDetail(item)||!!(item.crop&&item.media&&item.interaction!=='none'),focus=item.interaction==='focus',step=c.kind==='process'&&!split;
+  if(adaptive&&!split&&['cards','compare','process'].includes(c.kind)){
+   const plan=itemLayout(item,c,columns),h=plan.highlight,at=h?item.body.indexOf(h):-1;
+   return <section key={item.id} className={`content-item adaptive-item ${item.media&&!step?'with-media':''} ${item.value?'with-value':''} ${focus?'focus-card':''}`} data-emphasis={plan.emphasis} data-align={plan.align} data-media-layout={plan.media} data-density={plan.density}>
+    {step?<button className="content-step card-heading" data-content-step={i} data-step-detail={hasDetail(item)?c.items.indexOf(item):undefined} data-active={i===0?'true':'false'} aria-pressed={i===0}><b>{String(i+1).padStart(2,'0')}</b><strong>{item.title}</strong></button>:<div className="card-heading">{c.presentation?.marker!=='none'&&!item.value&&<b className="content-number" aria-hidden="true">{String(i+1).padStart(2,'0')}</b>}{item.title&&<h2>{item.title}</h2>}</div>}
+    {item.value&&<div className="content-value">{item.value}</div>}
+    {item.media&&!step&&media(item)}
+    {item.body&&<p className="content-body">{at<0?item.body:<>{item.body.slice(0,at)}<mark>{h}</mark>{item.body.slice(at+h.length)}</>}</p>}
+    {interactive&&focus&&<button className="content-focus-hit" data-content-step={i} data-active={i===0?'true':'false'} aria-pressed={i===0} aria-label={`聚焦${item.title}`}/>}
+    {interactive&&!step&&!focus&&details&&<button className="content-detail-hit" data-detail-open={c.items.indexOf(item)} aria-label={`查看${item.title||'本项'}详情`}/>}
+   </section>;
+  }
   return <section className={`content-item ${item.media&&!split?'with-media':''} ${item.value?'with-value':''} ${focus?'focus-card':''}`} key={item.id}>
    {step?<button className="content-step" data-content-step={i} data-step-detail={hasDetail(item)?c.items.indexOf(item):undefined} data-active={i===0?'true':'false'} aria-pressed={i===0}><b>{String(i+1).padStart(2,'0')}</b><strong>{item.title}</strong></button>:<>
     {numbered&&<b className="content-number" aria-hidden="true">{String(i+1).padStart(2,'0')}</b>}
@@ -39,10 +52,10 @@ export default function ContentScene({s,interactive=true}:{s:Slide;interactive?:
  const carousel=s.composition?.sequence?s.composition.sequence==='carousel':split;
  const mediaGroup=()=>carousel&&visuals.length===1?media(visuals[0]):carousel?<Gallery frames={visuals.map(i=>i.mediaFrame)} s={{...s,media:visuals[0]?.media||'',gallery:visuals.slice(1).map(i=>i.media!),subtitle:s.title}} interactive={interactive}/>:<div className={`content-image-stage ${visuals.length>1?'multi':''}`} style={{'--content-columns':Math.min(visuals.length||1,3)} as React.CSSProperties}>{visuals.map(i=><div className="content-image-cell" key={i.id}>{media(i)}{interactive&&i.crop&&i.interaction!=='none'&&<button className="content-detail-hit" data-detail-open={c.items.indexOf(i)} aria-label={`放大${i.title||'图片'}`}/>}</div>)}</div>;
  const chartValues=main.map(i=>i.value?.trim()&&Number.isFinite(Number(i.value))?Number(i.value):null),chartMax=Math.max(1,...chartValues.filter((v):v is number=>v!==null).map(Math.abs));
- return <article ref={ref} className={`scene comic-default semantic-scene ${(s.master||DEFAULT_MASTER).version==='1.1.0'?'master-v11':''} ${s.title.replace(/\s/g,'').length>16?'long-heading':''} content-${c.kind} content-layout-${layout} ${opening?'comic-chapter':''} ${summary?'has-summary':''} ${stepMedia?'has-step-media':''} ${s.chapter?.visible?'has-chapter':''} ${numbered?'numbered-cards':''} ${main.some(i=>i.value)?'metric-cards':''}`} data-content-count={main.length} data-content-columns={columns}>
+ return <article ref={ref} className={`scene comic-default semantic-scene master-v12 ${s.title.replace(/\s/g,'').length>16?'long-heading':''} content-${c.kind} content-layout-${layout} ${opening?'comic-chapter':''} ${summary?'has-summary':''} ${stepMedia?'has-step-media':''} ${s.chapter?.visible?'has-chapter':''} ${numbered?'numbered-cards':''} ${main.some(i=>i.value)?'metric-cards':''}`} data-content-count={main.length} data-content-columns={columns}>
   <div className="comic-backdrop" aria-hidden="true">{s.background&&<img src={s.background} alt=""/>}</div><div className="comic-dots" aria-hidden="true"/>
   <div className="scene-brand"><img className="logo-light" src={brandLogo} alt="洋葱学园"/><img className="logo-dark" src={brandLogoWhite} alt="洋葱学园"/></div>
-  {s.chapter?.visible&&<div className="chapter-ribbon"><span>{s.chapter.title}</span></div>}
+  {s.chapter?.visible&&<div className="chapter-ribbon" style={adaptive?{'--chapter-color':chapterColor(s.chapter)} as React.CSSProperties:undefined}><span>{s.chapter.title}</span></div>}
   {opening?<div className="comic-opening"><h1><span>{s.title}</span></h1>{showSubtitle&&s.subtitle&&<div className="comic-text"><p>{s.subtitle}</p></div>}</div>:<>
    <h1 className="comic-title"><span>{s.title}</span></h1>
    <div className="content-main">

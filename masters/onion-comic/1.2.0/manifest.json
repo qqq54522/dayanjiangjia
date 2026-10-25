@@ -1,7 +1,7 @@
 {
   "id": "onion-comic",
-  "version": "1.1.0",
-  "name": "洋葱学园 · 漫画",
+  "version": "1.2.0",
+  "name": "洋葱学园 · 漫画与内容层次",
   "renderer": "comic-v1",
   "stylesheet": "styles.css",
   "font": {
@@ -27,5 +27,5 @@
     }
   },
   "provenance": "用户提供并确认用于工作台默认母版的洋葱学园课程截图拼图。仅此母版资源随工具分发，业务稿件素材不入库。",
-  "stylesheetSha256": "e018aa81a7c90056b086127b25ca96f42d84ccdbf6db18af0fa105be9291629d"
+  "stylesheetSha256": "3481b6d1f74b77f45d9ba47cf94cdeac93fd24f877523add1bab0605bc7929e7"
 }

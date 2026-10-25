@@ -12,7 +12,7 @@ function classicExamples(source:Slide[]):Slide[]{
  ['让差异，一眼就能看见','排版示例数据，非业务结果；统一量程 0—100',['方案 A|40','方案 B|65','方案 C|80']],
  ['把最好的位置，留给画面','素材演示 · 可替换为自己的图片、GIF 或视频',[]]
  ] as [string,string,string[]][];
- return pageTypes.map(([layout,name],i)=>({id:crypto.randomUUID().slice(0,12),round:1,master:source[0]?.master||{...DEFAULT_MASTER},theme:'brand',layout,title:content[i][0],subtitle:content[i][1],points:content[i][2],media:layout==='media'?media:'',gallery:[],background,note:`样式示例：${name}。可复制本页，再替换标题、正文与素材。${layout==='chart'?'图表要点按“名称|数值”填写，数值范围 0—100。':''}`,source:'工作台样式示例',...(layout==='media'?{composition:{intent:'visual' as const,sequence:'carousel' as const,fit:'contain' as const,brief:''}}:{})}));
+ return pageTypes.map(([layout,name],i)=>({id:crypto.randomUUID().slice(0,12),round:1,master:{...DEFAULT_MASTER},theme:'brand',layout,title:content[i][0],subtitle:content[i][1],points:content[i][2],media:layout==='media'?media:'',gallery:[],background,note:`样式示例：${name}。可复制本页，再替换标题、正文与素材。${layout==='chart'?'图表要点按“名称|数值”填写，数值范围 0—100。':''}`,source:'工作台样式示例',...(layout==='media'?{composition:{intent:'visual' as const,sequence:'carousel' as const,fit:'contain' as const,brief:''}}:{})}));
 }
 
 export function styleExamples(source:Slide[]):Slide[]{
@@ -26,7 +26,7 @@ export function styleExamples(source:Slide[]):Slide[]{
  {title:'沿着一条路径，逐步讲清',subtitle:'点按当前步骤，聚焦讲解',content:{kind:'process',goal:'说明从理解到行动的过程',summary:'',items:[item('先观察','找到具体的问题'),item('再理解','解释问题背后的原因'),item('去尝试','完成一个可执行的动作')]}},
  {title:'范围与对应关系，一眼看清',subtitle:'仅展示结构示例，不代表业务信息',content:{kind:'table',goal:'清楚说明各项的对应关系',summary:'完整明细可以放入点按详情。',items:[item('完整说明','','这里保留完整口径、补充条件与来源。')],table:{headers:['对象','主要用途','补充说明'],rows:[['类型 A','建立概念','先给一个例子'],['类型 B','解释过程','逐步展示'],['类型 C','比较差异','统一比较口径']]}}}
  ];
- const all=[...classicExamples(source),...examples.map((e,i):Slide=>({id:crypto.randomUUID(),round:1,master:source[0]?.master||{...DEFAULT_MASTER},theme:'brand',layout:'statement',...e,points:[],media:'',gallery:[],background,note:'母版结构示意。复制后替换内容；可在素材与排版中选择编号、列数与图文布局。',source:'工作台样式示例',chapter:{id:'example-chapter',title:'表达方式',visible:i===0}}))];
+ const all=[...classicExamples(source),...examples.map((e,i):Slide=>({id:crypto.randomUUID(),round:1,master:{...DEFAULT_MASTER},theme:'brand',layout:'statement',...e,points:[],media:'',gallery:[],background,note:'母版结构示意。复制后替换内容；可在素材与排版中选择编号、列数与图文布局。',source:'工作台样式示例',chapter:{id:'example-chapter',title:'表达方式',visible:i===0}}))];
  const classic=(layout:Slide['layout'])=>all.find(s=>!s.content&&s.layout===layout)!;
  const semantic=(kind:NonNullable<Slide['content']>['kind'])=>all.find(s=>s.content?.kind===kind)!;
  const sources:Record<VariantId,Slide>={cover:classic('hero'),chapter:classic('hero'),point:semantic('point'),image:classic('media'),balanced:classic('media'),text:classic('media'),list:classic('statement'),cards:semantic('cards'),process:semantic('process'),compare:semantic('compare'),chart:classic('chart'),table:semantic('table')};
