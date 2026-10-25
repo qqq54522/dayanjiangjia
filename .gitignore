@@ -34,3 +34,5 @@ work/
 
 # Reviewed built-in master artwork only; all business materials remain ignored.
 !masters/onion-comic/1.0.0/assets/background.png
+
+!masters/onion-comic/1.1.0/assets/background.png

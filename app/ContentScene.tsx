@@ -1,3 +1,4 @@
+import {DEFAULT_MASTER} from '../lib/masters';
 import React,{useEffect,useRef,useId} from 'react';
 import {contentLayout,contentColumns,hasDetail,numberedItems,type ContentItem} from '../lib/content';
 import type {Slide} from '../lib/deck';
@@ -25,7 +26,7 @@ export default function ContentScene({s,interactive=true}:{s:Slide;interactive?:
   return <section className={`content-item ${item.media&&!split?'with-media':''} ${item.value?'with-value':''} ${focus?'focus-card':''}`} key={item.id}>
    {step?<button className="content-step" data-content-step={i} data-step-detail={hasDetail(item)?c.items.indexOf(item):undefined} data-active={i===0?'true':'false'} aria-pressed={i===0}><b>{String(i+1).padStart(2,'0')}</b><strong>{item.title}</strong></button>:<>
     {numbered&&<b className="content-number" aria-hidden="true">{String(i+1).padStart(2,'0')}</b>}
-    {item.value&&<div className="content-value">{item.value}</div>}<h2>{item.title}</h2>
+    {item.value&&<div className="content-value">{item.value}</div>}{item.title&&<h2>{item.title}</h2>}
    </>}
    {item.media&&!step&&!split&&media(item)}
    {item.body&&<p className="content-body">{item.body}</p>}
@@ -37,7 +38,7 @@ export default function ContentScene({s,interactive=true}:{s:Slide;interactive?:
  const carousel=s.composition?.sequence?s.composition.sequence==='carousel':split;
  const mediaGroup=()=>carousel&&visuals.length===1?media(visuals[0]):carousel?<Gallery s={{...s,media:visuals[0]?.media||'',gallery:visuals.slice(1).map(i=>i.media!),subtitle:s.title}} interactive={interactive}/>:<div className={`content-image-stage ${visuals.length>1?'multi':''}`} style={{'--content-columns':Math.min(visuals.length||1,3)} as React.CSSProperties}>{visuals.map(i=><div className="content-image-cell" key={i.id}>{media(i)}{interactive&&i.crop&&i.interaction!=='none'&&<button className="content-detail-hit" data-detail-open={c.items.indexOf(i)} aria-label={`放大${i.title||'图片'}`}/>}</div>)}</div>;
  const chartValues=main.map(i=>i.value?.trim()&&Number.isFinite(Number(i.value))?Number(i.value):null),chartMax=Math.max(1,...chartValues.filter((v):v is number=>v!==null).map(Math.abs));
- return <article ref={ref} className={`scene comic-default semantic-scene content-${c.kind} content-layout-${layout} ${opening?'comic-chapter':''} ${summary?'has-summary':''} ${stepMedia?'has-step-media':''} ${s.chapter?.visible?'has-chapter':''} ${numbered?'numbered-cards':''} ${main.some(i=>i.value)?'metric-cards':''}`} data-content-count={main.length} data-content-columns={columns}>
+ return <article ref={ref} className={`scene comic-default semantic-scene ${(s.master||DEFAULT_MASTER).version==='1.1.0'?'master-v11':''} ${s.title.replace(/\s/g,'').length>16?'long-heading':''} content-${c.kind} content-layout-${layout} ${opening?'comic-chapter':''} ${summary?'has-summary':''} ${stepMedia?'has-step-media':''} ${s.chapter?.visible?'has-chapter':''} ${numbered?'numbered-cards':''} ${main.some(i=>i.value)?'metric-cards':''}`} data-content-count={main.length} data-content-columns={columns}>
   <div className="comic-backdrop" aria-hidden="true">{s.background&&<img src={s.background} alt=""/>}</div><div className="comic-dots" aria-hidden="true"/>
   <div className="scene-brand"><img className="logo-light" src={brandLogo} alt="洋葱学园"/><img className="logo-dark" src={brandLogoWhite} alt="洋葱学园"/></div>
   {s.chapter?.visible&&<div className="chapter-ribbon"><span>{s.chapter.title}</span></div>}

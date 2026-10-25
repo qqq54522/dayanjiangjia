@@ -1,0 +1,31 @@
+{
+  "id": "onion-comic",
+  "version": "1.1.0",
+  "name": "洋葱学园 · 漫画",
+  "renderer": "comic-v1",
+  "stylesheet": "styles.css",
+  "font": {
+    "family": "Deck PuHuiTi",
+    "name": "阿里普惠体 2.0",
+    "weights": [
+      400,
+      500,
+      800,
+      900
+    ]
+  },
+  "palette": {
+    "blue": "#1EB2FF",
+    "ink": "#2e2e3a",
+    "yellow": "#ffd633",
+    "paper": "#ffffff"
+  },
+  "assets": {
+    "background": {
+      "file": "assets/background.png",
+      "sha256": "6b67492092774c2cead58157bb1355304a8c281f2348cfc4554048e36c92744e"
+    }
+  },
+  "provenance": "用户提供并确认用于工作台默认母版的洋葱学园课程截图拼图。仅此母版资源随工具分发，业务稿件素材不入库。",
+  "stylesheetSha256": "e018aa81a7c90056b086127b25ca96f42d84ccdbf6db18af0fa105be9291629d"
+}

@@ -1,0 +1,4 @@
+import test from'node:test';import assert from'node:assert/strict';import{inspectScene}from'../lib/render-review.ts';
+const node=(overrides={})=>({closest:()=>null,getClientRects:()=>[1],getBoundingClientRect:()=>({right:100,bottom:100,width:100,height:100}),textContent:'关键数字',clientWidth:100,clientHeight:100,scrollWidth:100,scrollHeight:100,matches:()=>false,...overrides});
+const scene=els=>({getBoundingClientRect:()=>({width:1280,height:720,right:1280,bottom:720}),querySelectorAll:selector=>selector.startsWith('.scene-media')?[]:els});
+test('real clipping is reported but closed dialog content is not',()=>{assert.deepEqual(inspectScene(scene([node()])),[]);assert.equal(inspectScene(scene([node({scrollHeight:150})])).length,1);assert.deepEqual(inspectScene(scene([node({closest:()=>({}),scrollHeight:150})])),[]);assert.equal(inspectScene(scene([node({getBoundingClientRect:()=>({right:200,bottom:800,width:100,height:100})})])).length,1)});
