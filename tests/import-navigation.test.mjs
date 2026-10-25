@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';import{resumeImport,hasImportResult,needsImportGeneration}from'../lib/import-navigation.ts';
+const groups=[{id:'new',state:'pending'},{id:'done',state:'accepted',slides:[{}]},{id:'review',state:'review',slides:[{}]},{id:'running',state:'running'},{id:'failed',state:'failed'}];
+test('reopen existing results goes straight to review without selecting ungenerated pages',()=>{assert.deepEqual(resumeImport(groups),{step:2,checked:['done','review','running'],selected:'review'})});
+test('new uploads and reference attachment stay in selection',()=>{assert.equal(resumeImport([{id:'a',state:'pending'}]).step,1);assert.deepEqual(resumeImport(groups,true),{step:1,checked:['new'],selected:'new'})});
+test('generating unfinished pages never regenerates existing results including failed retries',()=>{assert.deepEqual(groups.filter(needsImportGeneration).map(g=>g.id),['new','failed']);assert.equal(needsImportGeneration({id:'retry',state:'failed',slides:[{}]}),false);assert.deepEqual(groups.filter(hasImportResult).map(g=>g.id),['done','review'])});
