@@ -5,7 +5,7 @@ test('rendered presentation respects explicit visibility, meaningful interaction
  let s=make(),h=html(s);assert.equal((h.match(/class="content-number"/g)||[]).length,5);assert.ok(!h.includes('这是隐藏的副标题'));assert.ok(!h.includes('data-detail-open'));assert.ok(!h.includes('content-detail-sheet'));assert.ok(h.includes('要点4'));
  s.content.presentation={subtitle:'visible'};assert.ok(html(s).includes('这是隐藏的副标题'));
  s.content.items[0].interaction='detail';h=html(s);assert.ok(h.includes('data-detail-open="0"'));assert.ok(h.includes('完整来源'));
- s=make('point');s.content.presentation={layout:'cover'};h=html(s);assert.ok(h.includes('comic-opening'));assert.ok(!h.includes('content-main'));
+ s=make('point');s.content.presentation={layout:'cover'};h=html(s);assert.ok(h.includes('cover-opening'));assert.ok(!h.includes('content-main'));
  s=make('visual');s.content.items=[{id:'photo',title:'不占图片位置的说明',body:'不占图片位置的正文',detail:'',media:'/media/photo.png'}];h=html(s);assert.ok(h.includes('content-image-stage'));assert.ok(!h.includes('<h2>'));assert.ok(!h.includes('content-lead'));assert.ok(!h.includes('content-body'));
  s.content.presentation={layout:'balanced'};s.content.items[0].crop={x:0,y:0,width:.5,height:.5};s.content.items[0].mediaAspect=1;assert.ok(html(s).includes('content-crop'));
  s.content.items[0].media='/media/photo2.png';s.content.items.push({id:'next',title:'第二张',body:'',detail:'',media:'/media/next.png'});s.composition={intent:'visual',sequence:'grid',fit:'contain',brief:''};assert.ok(html(s).includes('content-image-stage multi'));

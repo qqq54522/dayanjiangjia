@@ -1,3 +1,4 @@
+import {CoverOpening} from './CoverOpening';
 import {FocusTable} from './FocusTable';
 import {itemLayout,adaptiveColumns} from '../lib/module-layout';
 import {chapterColor} from '../lib/chapters';
@@ -57,7 +58,7 @@ export default function ContentScene({s,interactive=true}:{s:Slide;interactive?:
   <div className="comic-backdrop" aria-hidden="true">{s.background&&<img src={s.background} alt=""/>}</div><div className="comic-dots" aria-hidden="true"/>
   <div className="scene-brand"><img className="logo-light" src={brandLogo} alt="洋葱学园"/><img className="logo-dark" src={brandLogoWhite} alt="洋葱学园"/></div>
   {s.chapter?.visible&&<div className="chapter-ribbon" style={adaptive?{'--chapter-color':chapterColor(s.chapter)} as React.CSSProperties:undefined}><span>{s.chapter.title}</span></div>}
-  {opening?<div className="comic-opening"><h1><span>{s.title}</span></h1>{showSubtitle&&s.subtitle&&<div className="comic-text"><p>{s.subtitle}</p></div>}</div>:<>
+  {layout==='cover'?<CoverOpening title={s.title} subtitle={showSubtitle?s.subtitle:undefined}/>:opening?<div className="comic-opening"><h1><span>{s.title}</span></h1>{showSubtitle&&s.subtitle&&<div className="comic-text"><p>{s.subtitle}</p></div>}</div>:<>
    <h1 className="comic-title"><span>{s.title}</span></h1>
    <div className="content-main">
     {showSubtitle&&s.subtitle&&!image&&!split&&<p className="content-lead">{s.subtitle}</p>}

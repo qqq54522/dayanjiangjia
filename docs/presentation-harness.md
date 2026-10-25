@@ -38,7 +38,8 @@
 
 表达结构 content.kind：point、visual、cards、compare、process、table。视觉版式 content.presentation.layout：auto、cover、chapter、image、balanced、text、cards、list、chart、spotlight。
 
-- cover / chapter：沿用已确认的倾斜漫画标题与品牌背景。封面有主张，章节页负责转场，不套普通白卡片。
+- cover：深色斜切舞台承载水平大标题，右侧课程漫画背景与品牌 Logo；标题可手动换行，最后一行用黄色强调，副标题按需显示。长标题需检查语义断句，不把词语机械拆开。
+- chapter：沿用倾斜漫画标题框与品牌背景，负责转场，与封面的完整主视觉区分；不套普通白卡片。
 - image：标题以下留给图片/GIF/视频。保持完整比例；只有明确获准才裁剪。主画面不放重复图注、上下小字或资料按钮。
 - balanced：左约三分之一清晰文字，右约三分之二画面。左栏中的标题、要点要有层级，不是居中的一小团字。
 - text：左侧更多空间呈现文字与标签，右侧素材补充。既有文本也有图片时优先考虑这两种成熟左右结构，而非一律卡片化。
