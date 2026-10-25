@@ -4,7 +4,7 @@ import type {SlideContent} from '../lib/content';
 export function FocusTable({table,interactive}:{table:NonNullable<SlideContent['table']>;interactive:boolean}){
  const control=(label:string,axis:string,index:number)=><button type="button" disabled={!interactive} data-matrix-axis={axis} data-matrix-index={index} aria-pressed="false" aria-label={`聚焦${label}`}>{label}</button>;
  return <div className="focus-matrix" data-matrix="" data-focus-axis="" data-focus-index="">
-  <table><thead><tr>{table.headers.map((h,i)=><th key={i} scope="col" data-matrix-col={i}>{control(h,i===0?'all':'col',i)}</th>)}</tr></thead><tbody>{table.rows.map((row,i)=><tr key={i} data-matrix-row={i}>{row.map((cell,j)=>j===0?<th key={j} scope="row" data-matrix-col={0}>{control(cell,'row',i)}</th>:<td key={j} data-matrix-col={j}>{cell.split('\n').map((line,k)=><span className="matrix-line" key={k}>{line}</span>)}</td>)}</tr>)}</tbody></table>
+  <table><thead><tr>{table.headers.map((h,i)=><th key={i} scope="col" data-matrix-col={i}>{control(h,i===0?'all':'col',i)}</th>)}</tr></thead><tbody>{table.rows.map((row,i)=><tr key={i} data-matrix-row={i}>{row.map((cell,j)=>j===0?<th key={j} scope="row" data-matrix-col={0}>{control(cell,'row',i)}</th>:<td key={j} data-matrix-col={j}>{table.tagColumns?.includes(j)?<div className="matrix-products">{cell.split(/[·\n]/).map(v=>v.trim()).filter(Boolean).map((name,k)=><span className="matrix-product" key={k}>{name}</span>)}</div>:cell.split('\n').map((line,k)=><span className="matrix-line" key={k}>{line}</span>)}</td>)}</tr>)}</tbody></table>
   {table.footer&&<div className="matrix-footer" data-matrix-row={table.rows.length}>{control(table.footer.label,'row',table.rows.length)}<p>{table.footer.text}</p></div>}
  </div>;
 }
