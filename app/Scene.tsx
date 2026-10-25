@@ -1,3 +1,4 @@
+import {frameStyle,type MediaFrame} from '../lib/media-frame';
 import {masterDefinition,masterBackground} from '../lib/masters';
 import {isBlankSlide} from '../lib/slide-order';
 import React,{useEffect,useRef} from 'react';
@@ -11,15 +12,15 @@ import {initGallery} from '../lib/gallery';
 import {initListFocus} from '../lib/list-focus';
 import {chartPoint} from '../lib/templates';
 import ContentScene from './ContentScene';
-export function Gallery({s,interactive}:{s:Slide;interactive:boolean}) {
+export function Gallery({s,interactive,frames=[]}:{s:Slide;interactive:boolean;frames?:Array<MediaFrame|undefined>}) {
  const urls=[s.media,...(s.gallery||[])].filter(Boolean);
  const ref=useRef<HTMLDivElement>(null);
  useEffect(()=>{if(interactive&&ref.current&&urls.length)return initGallery(ref.current)},[interactive,JSON.stringify(urls)]);
  if(!urls.length)return null;
  const video=(u:string)=>/\.mp4(?:[?#]|$)/i.test(u)||u.startsWith('data:video/');
- if(!interactive)return <div className="scene-media">{video(urls[0])?<video className="video-thumbnail" src={urls[0]} muted playsInline preload="auto" onLoadedMetadata={e=>{e.currentTarget.currentTime=Math.min(.1,e.currentTarget.duration/2||0)}}/>:<img src={urls[0]} alt={s.subtitle}/>}</div>;
+ if(!interactive)return <div className="scene-media">{video(urls[0])?<video className="video-thumbnail" src={urls[0]} muted playsInline preload="auto" onLoadedMetadata={e=>{e.currentTarget.currentTime=Math.min(.1,e.currentTarget.duration/2||0)}}/>:<img style={frameStyle(frames[0])} src={urls[0]} alt={s.subtitle}/>}</div>;
  return <div className="scene-media gallery" ref={ref}>
- <div className="gallery-frame">{urls.map((u,i)=><div className="media-item" key={i} hidden={i!==0}>{video(u)?<><video src={u} controls controlsList="nofullscreen nodownload noremoteplayback" disablePictureInPicture playsInline muted preload="metadata" aria-label={s.subtitle+' 视频'}/><span className="video-error" hidden>视频无法播放，请使用 H.264 / AAC 编码的 MP4。</span></>:<button className="image-open" data-gallery="open" aria-label="放大查看图片或动画"><img src={u} alt={s.subtitle+' · '+(i+1)}/></button>}</div>)}</div>
+ <div className="gallery-frame">{urls.map((u,i)=><div className="media-item" key={i} hidden={i!==0}>{video(u)?<><video src={u} controls controlsList="nofullscreen nodownload noremoteplayback" disablePictureInPicture playsInline muted preload="metadata" aria-label={s.subtitle+' 视频'}/><span className="video-error" hidden>视频无法播放，请使用 H.264 / AAC 编码的 MP4。</span></>:<button className="image-open" data-gallery="open" aria-label="放大查看图片或动画"><img style={frameStyle(frames[i])} src={u} alt={s.subtitle+' · '+(i+1)}/></button>}</div>)}</div>
  {urls.length>1&&<div className="gallery-controls"><button data-gallery="prev" aria-label="上一张图片">‹ 上一张</button><span className="gallery-count">1 / {urls.length}</span><button data-gallery="next" aria-label="下一张图片">下一张 ›</button></div>}
  <dialog className="media-lightbox" aria-label="放大查看"><img alt={s.subtitle}/><video hidden controls controlsList="nofullscreen nodownload noremoteplayback" disablePictureInPicture playsInline muted preload="metadata" aria-label="放大视频"/><div className="lightbox-brand"><img src={brandLogoWhite} alt="洋葱学园"/></div>{urls.length>1&&<div className="gallery-controls"><button data-gallery="prev">‹ 上一张</button><span className="gallery-count">1 / {urls.length}</span><button data-gallery="next">下一张 ›</button></div>}</dialog>
  </div>;
