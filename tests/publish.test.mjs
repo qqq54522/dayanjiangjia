@@ -71,6 +71,56 @@ test('legacy publications become v1.0 and each project advances only after a suc
  }finally{rmSync(dir,{recursive:true,force:true})}
 });
 
+test('published page uploads large assets separately and keeps the HTML small',async()=>{
+ const dir=mkdtempSync(path.join(tmpdir(),'deck-publish-assets-test-'));
+ try{
+  writeFileSync(path.join(dir,'publish-config.json'),JSON.stringify({gatewayUrl:'https://gateway.example.test',apiKey:'private-key'}));
+  const uploads=[];
+  let pending;
+  const fetchImpl=async(url,options)=>{
+   if(url.endsWith('/v1/presign')){
+    pending=JSON.parse(options.body);
+    return new Response(JSON.stringify({key:pending.key,upload_url:'https://storage.example.test/upload',public_url:'https://public.example.test/'+pending.key,retention_days:300}),{status:200});
+   }
+   const chunks=[];for await(const chunk of options.body)chunks.push(chunk);
+   uploads.push({key:pending.key,type:options.headers['Content-Type'],body:Buffer.concat(chunks)});
+   return new Response(null,{status:204});
+  };
+  const font=Buffer.alloc(1000,21),video=Buffer.alloc(4000,87);
+  const html=`<html><style>url("deck-asset-0.bin")</style><img src="deck-asset-0.bin"><video src="deck-asset-1.mp4"></video><script type="application/octet-stream" data-deck-asset="deck-asset-0.bin" data-mime="font/ttf">${font.toString('base64')}</script><script type="application/octet-stream" data-deck-asset="deck-asset-1.mp4" data-mime="video/mp4">${video.toString('base64')}</script></html>`;
+  const publisher=createPublisher({dir,fetchImpl,clock:()=>new Date('2026-10-26T12:00:00Z'),id:()=> 'fixed-id'});
+  const item=await publisher.publish(Readable.from([html]),{title:'Deck',projectId:'project-a'});
+  assert.equal(uploads.length,3);
+  assert.deepEqual(uploads.map(x=>x.type),['font/ttf','video/mp4','text/html']);
+  assert.deepEqual(uploads[0].body,font);assert.deepEqual(uploads[1].body,video);
+  const page=uploads[2].body.toString();
+  assert.ok(!page.includes('data-deck-asset'));
+  assert.ok(!page.includes('src="deck-asset-0.bin"'));
+  assert.ok(!page.includes('url("deck-asset-0.bin")'));
+  assert.match(page,/https:\/\/public\.example\.test\/onion-deck-studio\/deck\/20261026-120000-fixed-id\/assets\/deck-asset-1\.mp4/);
+  assert.ok(item.entryBytes<html.length/2);
+  assert.equal(item.bytes,item.entryBytes+font.length+video.length);
+  assert.equal(item.versionNumber,1);
+ }finally{rmSync(dir,{recursive:true,force:true})}
+});
+
+test('an asset upload failure never creates a published link',async()=>{
+ const dir=mkdtempSync(path.join(tmpdir(),'deck-publish-asset-failure-test-'));
+ try{
+  writeFileSync(path.join(dir,'publish-config.json'),JSON.stringify({gatewayUrl:'https://gateway.example.test',apiKey:'private-key'}));
+  let uploaded=0;
+  const publisher=createPublisher({dir,fetchImpl:async(url,options)=>{
+   if(url.endsWith('/v1/presign'))return new Response(JSON.stringify({upload_url:'https://storage.example.test/upload',public_url:'https://public.example.test/asset'}),{status:200});
+   for await(const _ of options.body){}uploaded++;
+   return new Response(null,{status:500});
+  }});
+  const html='<img src="deck-asset-0.bin"><script type="application/octet-stream" data-deck-asset="deck-asset-0.bin" data-mime="image/png">AQID</script>';
+  await assert.rejects(publisher.publish(Readable.from([html]),{title:'Deck'}),/文件上传失败/);
+  assert.equal(uploaded,1);
+  assert.deepEqual(publisher.status().publications,[]);
+ }finally{rmSync(dir,{recursive:true,force:true})}
+});
+
 test('failed upload creates no publication history',async()=>{
  const dir=mkdtempSync(path.join(tmpdir(),'deck-publish-test-'));
  try{
