@@ -53,7 +53,13 @@ const server=http.createServer(async(req,res)=>{try{
  }
  if(url.pathname==='/api/identity')return send(res,200,{app:'onion-deck-studio',version:1});
  if(url.pathname==='/api/masters'&&req.method==='GET')return send(res,200,{default:DEFAULT_MASTER,masters:masterCatalog});
- if(url.pathname==='/api/projects'&&req.method==='GET')return send(res,200,{projects:store.list()});
+ if(url.pathname==='/api/projects'&&req.method==='GET'){
+  const latest=new Map();
+  for(const item of publisher.status().publications){
+   if(item.projectId&&!latest.has(item.projectId))latest.set(item.projectId,{versionNumber:item.versionNumber,createdAt:item.createdAt,url:item.url});
+  }
+  return send(res,200,{projects:store.list().map(project=>({...project,latestPublication:latest.get(project.id)||null}))});
+ }
  if(url.pathname==='/api/projects'&&req.method==='POST')return send(res,201,store.create((await body(req)).title));
  const projectMatch=/^\/api\/projects\/([a-f0-9-]{36})\/(open|workspace)$/.exec(url.pathname);
  if(projectMatch){const [,id,action]=projectMatch;

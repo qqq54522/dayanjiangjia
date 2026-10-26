@@ -3,7 +3,7 @@ import {mp4,gif} from '../tests/fixtures.mjs';import {FONTS} from '../lib/fonts.
 async function start(){const dir=mkdtempSync(path.join(tmpdir(),'deck-http-'));mkdirSync(path.join(dir,'fonts'));for(const f of FONTS)writeFileSync(path.join(dir,'fonts',f.name),Buffer.from([0,1,0,0,0,0,0,0]));
  const socket=net.createServer();socket.listen(0,'127.0.0.1');await once(socket,'listening');const port=socket.address().port;await new Promise(r=>socket.close(r));
  const proc=spawn(process.execPath,['server.mjs'],{env:{...process.env,PORT:String(port),DECK_DATA_DIR:dir},stdio:['ignore','pipe','pipe']});let output='';proc.stderr.on('data',x=>output+=x);await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('server start timeout '+output)),10000);proc.stdout.once('data',()=>{clearTimeout(timer);resolve()});proc.once('exit',()=>{clearTimeout(timer);reject(Error(output))})});
- return {base:'http://127.0.0.1:'+port,async stop(){const ended=once(proc,'exit');proc.kill();await ended;rmSync(dir,{recursive:true,force:true})}}}
+ return {base:'http://127.0.0.1:'+port,dir,async stop(){const ended=once(proc,'exit');proc.kill();await ended;rmSync(dir,{recursive:true,force:true})}}}
 test('HTTP upload → save → ZIP → second workspace; byte ranges, isolation and stale writes',async()=>{
  const a=await start(),b=await start();
  try{const upload=async(bytes)=>{const r=await fetch(a.base+'/api/media',{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:bytes});assert.equal(r.status,200);return (await r.json()).url};const video=await upload(mp4),image=await upload(gif);
@@ -38,6 +38,11 @@ test('project library creates, opens and autosaves separate drafts',async()=>{
   const original=library.projects[0];
   const created=await fetch(a.base+'/api/projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:'客户培训'})});assert.equal(created.status,201);
   const project=await created.json();assert.equal(project.slideCount,0);
+  writeFileSync(path.join(a.dir,'publications.json'),JSON.stringify([{id:'second',projectId:project.id,url:'https://public.example.test/v2/index.html',createdAt:'2026-10-26T12:00:00Z'},{id:'first',projectId:project.id,url:'https://public.example.test/v1/index.html',createdAt:'2026-10-26T11:00:00Z'}]));
+  const published=(await (await fetch(a.base+'/api/publish?project='+project.id)).json()).publications;
+  assert.deepEqual(published.map(item=>item.versionNumber),[2,1]);
+  assert.equal((await (await fetch(a.base+'/api/projects')).json()).projects.find(item=>item.id===project.id).latestPublication.versionNumber,2);
+  assert.equal((await (await fetch(a.base+'/api/projects')).json()).projects.find(item=>item.id===original.id).latestPublication,null);
   const opened=await (await fetch(a.base+'/api/projects/'+project.id+'/open',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})).json();
   assert.equal(opened.data.title,'客户培训');assert.deepEqual(opened.data.slides,[]);assert.equal(opened.revision,0);
   opened.data.slides=[structuredClone((await (await fetch(a.base+'/api/projects/'+original.id+'/workspace')).json()).data.slides[0])];

@@ -66,6 +66,13 @@
 .publication{border:1px solid #e5e5e5;border-radius:10px;padding:13px;display:grid;gap:7px;min-width:0}
 .publication strong,.publication small{display:block}.publication small{color:var(--muted);line-height:1.5}.publication>a{display:block;overflow-wrap:anywhere;color:#2459a6}
 .publication>div{display:flex;gap:8px;align-items:center}.publication-open{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border:1px solid #ddd;border-radius:8px;text-decoration:none;color:inherit}
+.publication-latest{border-color:#a8b9d0;background:#f5f8fc}
+.publication-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.publication-heading>span,.current-publication,.library-published-version{color:#2459a6;font-weight:700}
+.publication-heading>span{font-size:11px;padding:4px 8px;border-radius:99px;background:#e3ecf8;white-space:nowrap}
+.studio-topbar .current-publication{padding:2px 8px;border:0;border-radius:5px;background:#eaf1fb;font-size:10px;line-height:1.5;cursor:pointer}
+.studio-topbar .current-publication:hover{background:#dce9fa}
+.library-card-info .library-published-version{font-size:11px;margin-top:1px}
 @media(max-width:1100px){.studio>header.studio-topbar{gap:15px;padding:0 16px}.studio-topbar .topbar-brand{padding-right:15px}.topbar-actions{gap:10px}.history-actions{padding-right:10px}.studio-topbar .project-actions button{padding:8px 7px;gap:5px}.studio-topbar .project-title-button{font-size:13px}}
 @media(max-width:900px){.studio>header.studio-topbar{height:116px;min-height:116px;display:grid;grid-template-columns:130px minmax(0,1fr);gap:0 18px;padding:10px 16px 8px}.studio-topbar .topbar-brand{grid-column:1;grid-row:1}.project-identity{grid-column:2;grid-row:1}.topbar-actions{grid-column:1/-1;grid-row:2;justify-content:flex-end;gap:14px}.history-actions{margin-right:auto}.studio-topbar .project-actions button{padding:7px 10px}.studio>.workspace{height:calc(100dvh - 116px)}}
 @media(max-width:580px){.studio>.workspace{height:auto}.studio>header.studio-topbar{padding:8px 12px}.topbar-actions{gap:7px}.studio-topbar .project-actions button{padding:7px;font-size:11px;gap:4px}.studio-topbar .project-actions button svg{display:none}.studio-topbar .preview-action{padding:8px 12px}.history-actions{padding-right:7px}}
