@@ -8,7 +8,7 @@
   },
   "scripts": {
     "setup": "node scripts/setup.mjs",
-    "start": "node server.mjs",
+    "start": "node scripts/run.mjs",
     "build": "node scripts/build-masters.mjs && vite build",
     "check": "tsc --noEmit && node --test tests/*.test.mjs",
     "doctor": "node scripts/doctor.mjs",

@@ -111,6 +111,15 @@
 .category-picker button[aria-pressed=true]{background:#303033;color:white;border-color:#303033}.category-picker button[aria-pressed=true] small{color:#d5d5d8}
 .studio-topbar button.topbar-brand{border:0;background:transparent;cursor:pointer;text-align:left}
 .studio-topbar button.topbar-brand:hover strong{text-decoration:underline;text-underline-offset:4px}
+.library-topbar-actions{display:flex;align-items:center;gap:22px;color:#777;font-size:13px}
+.tool-update-button{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid #dedede;border-radius:7px;background:#fff;color:#454545;padding:8px 12px;min-height:36px;white-space:nowrap;font-size:12px}
+.tool-update-button:hover{background:#f3f3f3}
+.tool-update-backdrop{position:fixed;inset:0;z-index:120;background:#0008;display:grid;place-items:center;padding:20px}
+.tool-update-dialog{position:relative;width:min(520px,100%);max-height:90dvh;overflow:auto;background:#fff;border-radius:18px;padding:30px;color:#292929;box-shadow:0 20px 80px #0003}
+.tool-update-dialog h2{font-size:22px;margin:0 36px 18px 0}.tool-update-dialog p{line-height:1.7;color:#666}.tool-update-dialog p[role=alert]{color:#a33328}.tool-update-close{position:absolute;right:18px;top:18px;padding:6px}
+.tool-update-details{padding:10px 14px;background:#f6f6f6;border-radius:9px;margin:18px 0}.tool-update-details p{margin:5px 0;overflow-wrap:anywhere}
+.tool-update-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:24px}.tool-update-actions button{min-height:40px;border:1px solid #dedede;border-radius:8px;padding:8px 14px}.tool-update-actions .primary{background:#292929;color:#fff;border-color:#292929}.tool-update-actions button:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:1100px){.studio-topbar .tool-update-button{font-size:0;padding:8px}.studio-topbar .tool-update-button svg{width:18px;height:18px}}
 .project-library{min-height:100dvh;background:#f6f6f4;color:#272727;font-family:'Deck PuHuiTi','PingFang SC',sans-serif}
 .library-topbar{height:78px;padding:0 max(28px,calc((100vw - 1220px)/2));display:flex;justify-content:space-between;align-items:center;background:white;border-bottom:1px solid #e8e8e6}
 .library-wordmark{display:flex;align-items:center;gap:16px}.library-wordmark strong{font-size:22px;letter-spacing:.1em}.library-wordmark span{border-left:1px solid #ddd;padding-left:16px;color:#898989;font-size:12px;letter-spacing:.08em}.library-topbar>span{font-size:13px;color:#777}

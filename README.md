@@ -1,10 +1,10 @@
 # 洋葱学园直播工作台 · 本地协作版
 
-工具代码共享在公司 GitLab。每人运行自己的工作台，使用自己的 Codex 改稿和开发功能。文稿和图片保存在本机，通过内部飞书传送文稿包；不存入代码仓库。
+工具代码共享在 [GitHub 仓库](https://github.com/qqq54522/dayanjiangjia)。每人运行自己的工作台，使用自己的 Codex 改稿和开发功能。文稿和图片保存在本机，通过内部飞书传送文稿包；不存入代码仓库。
 
 ## 第一次使用
 
-需要 Git、Node.js 24 或更新版本，以及公司 GitLab 的仓库权限/SSH 配置。请让自己的 Codex 阅读 [AGENTS.md](AGENTS.md)，执行：
+需要 Git、Node.js 24 或更新版本。公开仓库可直接克隆；若仓库将来改为私密，需先获得访问权限并在自己的电脑配置 GitHub 身份。请让自己的 Codex 阅读 [AGENTS.md](AGENTS.md)，执行：
 
 ```sh
 npm run setup
@@ -34,7 +34,7 @@ npm start
 
 ## 同步工具功能
 
-在干净的 main 分支：`npm run update`。更新完成后重启服务、刷新网页。更新不操作文稿目录。
+项目广场和编辑页都有「更新工具」按钮。点击一次会检查 GitHub 的 `main`；有新版就自动拉取、安装、构建、重启并刷新页面。更新不操作 `.local/` 中的文稿、图片和发布配置。代码目录必须处于干净的 `main` 分支；其他分支、未提交改动或需要处理的分叉都会停止更新并说明原因。命令行也可运行 `npm run update`，完成后手动重启工作台。
 
 修改功能请让 Codex 建立 `codex/功能名` 分支，完成检查后运行：
 
@@ -52,9 +52,9 @@ npm run share-code -- "新增功能的简短说明"
 
 ## 给同事
 
-仓库：git@gitlab.yc345.tv:linfeng/onion-deck-studio.git
+仓库：https://github.com/qqq54522/dayanjiangjia.git
 
-可复制 [给同事的安装指令](docs/给同事的安装指令.md) 发给对方，由对方转发给自己的 Codex。需要公司网络/飞连和项目 Developer 权限；工具不会替对方自动取得这些权限。
+可复制 [给同事的安装指令](docs/给同事的安装指令.md) 发给对方，由对方转发给自己的 Codex。当前仓库公开，可直接克隆；如果以后改为私密，需要逐人授予仓库访问权限。
 
 ## Pad 播放操作
 

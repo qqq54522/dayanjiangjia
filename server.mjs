@@ -7,6 +7,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createCodexBridge} from './lib/codex.mjs';
 import {createPublisher} from './lib/publish.mjs';
+import {createAppUpdater} from './lib/app-update.mjs';
 import {openStore} from './lib/store.mjs';
 import {FONTS,fontCSS} from './lib/fonts.mjs';
 import {pack,unpack,saveMedia} from './lib/transfer.mjs';
@@ -19,6 +20,7 @@ const workspaceView=id=>{const v=store.read(id);return {...v,data:masters.hydrat
 const codex=createCodexBridge({dir:dataDir,store});
 const publisher=createPublisher({dir:dataDir});
 const conversions=createConversions({dir:dataDir});
+const updater=createAppUpdater({root,supervised:process.env.DECK_SUPERVISED==='1',onRestart:()=>setTimeout(()=>{codex.close();conversions.close();server.close(()=>{store.close();process.exit(75)})},1000)});
 const send=(res,status,data)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(data))};
 const raw=async(req,limit=Infinity)=>{let size=0;const chunks=[];for await(const b of req){size+=b.length;if(size>limit)throw Object.assign(Error('上传文件超过大小限制'),{status:413});chunks.push(b)}return Buffer.concat(chunks)};
 const body=async req=>JSON.parse((await raw(req,10*1024*1024)).toString());
@@ -27,6 +29,8 @@ const server=http.createServer(async(req,res)=>{try{
  if(req.headers.origin&&!['http://127.0.0.1:'+port,'http://localhost:'+port].includes(req.headers.origin))return send(res,403,{error:'不接受跨站请求'});
  const url=new URL(req.url,'http://127.0.0.1:'+port);
  if(!['GET','HEAD'].includes(req.method)&&!(req.headers['content-type']?.startsWith('application/json')||(['/api/media','/api/import','/api/references'].includes(url.pathname)&&['application/zip','application/octet-stream','video/mp4'].includes(req.headers['content-type']))||(url.pathname==='/api/publish'&&req.headers['content-type']?.startsWith('text/html'))))return send(res,415,{error:'需要 JSON 或受支持的文件类型'});
+ if(url.pathname==='/api/update'&&req.method==='GET')return send(res,200,await updater.status());
+ if(url.pathname==='/api/update'&&req.method==='POST')return send(res,202,await updater.start());
  if(url.pathname==='/api/references'&&req.method==='GET')return send(res,200,conversions.list());
  if(url.pathname==='/api/references'&&req.method==='POST')return send(res,202,conversions.upload(await raw(req),url.searchParams.get('name')||'source',{background:defaultBackground,settings:workspaceView().data.settings}));
  const refMatch=/^\/api\/references\/([a-f0-9-]{36})(?:\/(generate|generate-all|retry|version))?$/.exec(url.pathname);
@@ -92,5 +96,5 @@ const server=http.createServer(async(req,res)=>{try{
  res.writeHead(200,{'Accept-Ranges':'bytes','Content-Length':size,'Content-Type':types[path.extname(file)]||'application/octet-stream','Cache-Control':'no-cache','X-Content-Type-Options':'nosniff'});if(req.method==='HEAD')return res.end();createReadStream(file).on('error',()=>res.destroy()).pipe(res);
  }catch(e){send(res,e.status||400,{error:e.message})}});
 server.on('error',e=>{console.error(e.code==='EADDRINUSE'?`端口 ${port} 已占用，请关闭旧工作台后重试，或指定 PORT。`:e.message);store.close();process.exit(1)});
-server.listen(port,'127.0.0.1',()=>console.log(`洋葱学园演示工作台 http://127.0.0.1:${port}\n文稿保存在 ${dataDir}，不会上传 GitLab。`));
+server.listen(port,'127.0.0.1',()=>console.log(`洋葱学园演示工作台 http://127.0.0.1:${port}\n文稿保存在 ${dataDir}，不会上传代码仓库。`));
 for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>{codex.close();conversions.close();server.close(()=>{store.close();process.exit(0)})});
