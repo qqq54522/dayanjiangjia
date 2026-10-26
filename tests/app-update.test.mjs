@@ -31,6 +31,8 @@ test('update only starts for a clean main checkout of the intended GitHub reposi
   rmSync(path.join(root,'local-change.txt'));
   git('checkout','-qb','feature');
   await assert.rejects(dirty.start(),/main 分支/);
+  git('remote','set-url','origin','git@gitlab.yc345.tv:linfeng/onion-deck-studio.git');
+  assert.equal(localUpdateState(root).remote,'https://github.com/qqq54522/dayanjiangjia.git');
   git('remote','set-url','origin','https://example.invalid/wrong.git');
   assert.throws(()=>localUpdateState(root),/没有找到大演说家 GitHub 仓库/);
  }finally{rmSync(root,{recursive:true,force:true})}
