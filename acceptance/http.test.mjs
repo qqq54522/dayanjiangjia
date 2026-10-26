@@ -31,6 +31,26 @@ test('HTTP upload → save → ZIP → second workspace; byte ranges, isolation 
  }finally{await a.stop();await b.stop()}
 });
 
+test('project library creates, opens and autosaves separate drafts',async()=>{
+ const a=await start();
+ try{
+  const library=await (await fetch(a.base+'/api/projects')).json();assert.equal(library.projects.length,1);
+  const original=library.projects[0];
+  const created=await fetch(a.base+'/api/projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:'客户培训'})});assert.equal(created.status,201);
+  const project=await created.json();assert.equal(project.slideCount,0);
+  const opened=await (await fetch(a.base+'/api/projects/'+project.id+'/open',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})).json();
+  assert.equal(opened.data.title,'客户培训');assert.deepEqual(opened.data.slides,[]);assert.equal(opened.revision,0);
+  opened.data.slides=[structuredClone((await (await fetch(a.base+'/api/projects/'+original.id+'/workspace')).json()).data.slides[0])];
+  opened.data.slides[0].title='培训第一页';
+  const saved=await fetch(a.base+'/api/projects/'+project.id+'/workspace',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:opened.data,revision:0})});assert.equal(saved.status,200);
+  assert.equal((await saved.json()).revision,1);
+  assert.equal((await (await fetch(a.base+'/api/projects/'+project.id+'/workspace')).json()).data.slides[0].title,'培训第一页');
+  assert.notEqual((await (await fetch(a.base+'/api/projects/'+original.id+'/workspace')).json()).data.slides[0].title,'培训第一页');
+  const history=(await (await fetch(a.base+'/api/projects')).json()).projects;assert.equal(history.length,2);assert.equal(history[0].title,'客户培训');
+  assert.equal((await fetch(a.base+'/api/projects/'+project.id+'/workspace',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:opened.data,revision:0})})).status,409);
+ }finally{await a.stop()}
+});
+
 test('reference import and review stay separate from the current draft and fixed versions',async()=>{
  const a=await start();try{const before=await (await fetch(a.base+'/api/workspace')).json();const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a9xkAAAAASUVORK5CYII=','base64');
  const r=await fetch(a.base+'/api/references?name=reference.png',{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:png});assert.equal(r.status,202);const d=await r.json();assert.equal(d.state,'ready');assert.equal(d.pages.length,1);assert.equal((await fetch(a.base+d.pages[0].preview)).status,200);

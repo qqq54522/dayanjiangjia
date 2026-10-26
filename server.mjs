@@ -15,7 +15,7 @@ const fontDir=path.join(dataDir,'fonts');
 const mediaDir=path.join(dataDir,'media');mkdirSync(mediaDir,{recursive:true});const store=openStore(dataDir);
 const masters=installMasters(mediaDir);
 const defaultBackground=masters.background();
-const workspaceView=()=>{const v=store.read();return {...v,data:masters.hydrate(v.data)}};
+const workspaceView=id=>{const v=store.read(id);return {...v,data:masters.hydrate(v.data)}};
 const codex=createCodexBridge({dir:dataDir,store});
 const publisher=createPublisher({dir:dataDir});
 const conversions=createConversions({dir:dataDir});
@@ -45,17 +45,26 @@ const server=http.createServer(async(req,res)=>{try{
  if(url.pathname==='/api/codex/settings'&&req.method==='PUT')return send(res,200,codex.update(await body(req)));
  if(url.pathname==='/api/codex/start'&&req.method==='POST')return send(res,202,codex.start(await body(req)));
  if(url.pathname==='/api/codex/cancel'&&req.method==='POST')return send(res,200,codex.cancel());
- if(url.pathname==='/api/publish'&&req.method==='GET')return send(res,200,publisher.status());
+ if(url.pathname==='/api/publish'&&req.method==='GET'){const id=url.searchParams.get('project');if(id)store.read(id);return send(res,200,publisher.status(id))}
  if(url.pathname==='/api/publish'&&req.method==='POST'){
   if(!req.headers['content-type']?.startsWith('text/html'))return send(res,415,{error:'发布内容必须是 HTML'});
-  return send(res,201,await publisher.publish(req,{title:url.searchParams.get('title')||'',source:url.searchParams.get('source')||'当前草稿'}));
+  const id=url.searchParams.get('project')||store.activeId();store.read(id);
+  return send(res,201,await publisher.publish(req,{title:url.searchParams.get('title')||'',source:url.searchParams.get('source')||'当前草稿',projectId:id}));
  }
  if(url.pathname==='/api/identity')return send(res,200,{app:'onion-deck-studio',version:1});
  if(url.pathname==='/api/masters'&&req.method==='GET')return send(res,200,{default:DEFAULT_MASTER,masters:masterCatalog});
+ if(url.pathname==='/api/projects'&&req.method==='GET')return send(res,200,{projects:store.list()});
+ if(url.pathname==='/api/projects'&&req.method==='POST')return send(res,201,store.create((await body(req)).title));
+ const projectMatch=/^\/api\/projects\/([a-f0-9-]{36})\/(open|workspace)$/.exec(url.pathname);
+ if(projectMatch){const [,id,action]=projectMatch;
+  if(action==='open'&&req.method==='POST'){store.select(id);return send(res,200,workspaceView(id))}
+  if(action==='workspace'&&req.method==='GET')return send(res,200,workspaceView(id));
+  if(action==='workspace'&&req.method==='PUT'){const b=await body(req);return send(res,200,store.save(masters.hydrate(b.data),b.revision,id))}
+ }
  if(url.pathname==='/api/workspace'&&req.method==='GET')return send(res,200,workspaceView());
  if(url.pathname==='/api/workspace'&&req.method==='PUT'){const b=await body(req);return send(res,200,store.save(masters.hydrate(b.data),b.revision))}
  if(url.pathname==='/api/proposals'&&req.method==='POST')return send(res,200,store.propose(await body(req)));
- if(url.pathname==='/api/export'&&req.method==='GET'){let data=workspaceView().data;const versionId=url.searchParams.get('version');if(versionId!==null){const version=data.versions.find(v=>v.id===versionId);if(!version)return send(res,404,{error:'此演示版本不存在，请刷新版本列表'});data={...data,slides:version.slides,settings:version.settings,comments:version.comments||[],proposals:[],versions:[version]}}const zip=pack(data,mediaDir,fontDir);res.writeHead(200,{'Content-Type':'application/zip','Content-Disposition':'attachment; filename=deck.deck.zip','Cache-Control':'no-store'});return res.end(zip)}
+ if(url.pathname==='/api/export'&&req.method==='GET'){let data=workspaceView(url.searchParams.get('project')||undefined).data;const versionId=url.searchParams.get('version');if(versionId!==null){const version=data.versions.find(v=>v.id===versionId);if(!version)return send(res,404,{error:'此演示版本不存在，请刷新版本列表'});data={...data,slides:version.slides,settings:version.settings,comments:version.comments||[],proposals:[],versions:[version]}}const zip=pack(data,mediaDir,fontDir);res.writeHead(200,{'Content-Type':'application/zip','Content-Disposition':'attachment; filename=deck.deck.zip','Cache-Control':'no-store'});return res.end(zip)}
  if(url.pathname==='/api/import'&&req.method==='POST')return send(res,200,{data:masters.hydrate(unpack(await raw(req),mediaDir,fontDir))});
  if(url.pathname==='/api/media'&&req.method==='POST'){return send(res,200,{url:saveMedia(mediaDir,await raw(req))})}
  if(url.pathname.startsWith('/api/'))return send(res,404,{error:'未找到接口'});
