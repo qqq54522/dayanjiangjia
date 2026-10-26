@@ -8,6 +8,9 @@ test('HTTP upload → save → ZIP → second workspace; byte ranges, isolation 
  const a=await start(),b=await start();
  try{const upload=async(bytes)=>{const r=await fetch(a.base+'/api/media',{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:bytes});assert.equal(r.status,200);return (await r.json()).url};const video=await upload(mp4),image=await upload(gif);
  const config=await (await fetch(a.base+'/api/codex')).json();assert.equal(config.settings.model,'gpt-6-astra');assert.equal(config.settings.effort,'medium');
+ const publication=await (await fetch(a.base+'/api/publish')).json();assert.deepEqual(publication.publications,[]);
+ assert.equal((await fetch(a.base+'/api/publish?title=Test',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})).status,415);
+ assert.equal((await fetch(a.base+'/api/publish?title=Test',{method:'POST',headers:{'Content-Type':'text/html',Origin:'https://untrusted.example'},body:'<html></html>'})).status,403);
  const set=await fetch(a.base+'/api/codex/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'gpt-6-luna',effort:'high'})});assert.equal(set.status,200);assert.equal((await set.json()).settings.effort,'high');
  assert.equal((await fetch(a.base+'/api/codex/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'x;bad',effort:'high'})})).status,400);
  assert.equal((await fetch(a.base+'/api/codex/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:-1,scope:'all',request:'test'})})).status,409);

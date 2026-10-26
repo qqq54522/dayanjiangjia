@@ -6,6 +6,7 @@ import {readFileSync,existsSync,mkdirSync,statSync,createReadStream} from 'node:
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createCodexBridge} from './lib/codex.mjs';
+import {createPublisher} from './lib/publish.mjs';
 import {openStore} from './lib/store.mjs';
 import {FONTS,fontCSS} from './lib/fonts.mjs';
 import {pack,unpack,saveMedia} from './lib/transfer.mjs';
@@ -16,6 +17,7 @@ const masters=installMasters(mediaDir);
 const defaultBackground=masters.background();
 const workspaceView=()=>{const v=store.read();return {...v,data:masters.hydrate(v.data)}};
 const codex=createCodexBridge({dir:dataDir,store});
+const publisher=createPublisher({dir:dataDir});
 const conversions=createConversions({dir:dataDir});
 const send=(res,status,data)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(data))};
 const raw=async(req,limit=Infinity)=>{let size=0;const chunks=[];for await(const b of req){size+=b.length;if(size>limit)throw Object.assign(Error('上传文件超过大小限制'),{status:413});chunks.push(b)}return Buffer.concat(chunks)};
@@ -24,7 +26,7 @@ const server=http.createServer(async(req,res)=>{try{
  const allowed=new Set([`127.0.0.1:${port}`,`localhost:${port}`]);if(!allowed.has(req.headers.host))return send(res,403,{error:'仅允许本机访问'});
  if(req.headers.origin&&!['http://127.0.0.1:'+port,'http://localhost:'+port].includes(req.headers.origin))return send(res,403,{error:'不接受跨站请求'});
  const url=new URL(req.url,'http://127.0.0.1:'+port);
- if(!['GET','HEAD'].includes(req.method)&&!(req.headers['content-type']?.startsWith('application/json')||(['/api/media','/api/import','/api/references'].includes(url.pathname)&&['application/zip','application/octet-stream','video/mp4'].includes(req.headers['content-type']))))return send(res,415,{error:'需要 JSON 请求'});
+ if(!['GET','HEAD'].includes(req.method)&&!(req.headers['content-type']?.startsWith('application/json')||(['/api/media','/api/import','/api/references'].includes(url.pathname)&&['application/zip','application/octet-stream','video/mp4'].includes(req.headers['content-type']))||(url.pathname==='/api/publish'&&req.headers['content-type']?.startsWith('text/html'))))return send(res,415,{error:'需要 JSON 或受支持的文件类型'});
  if(url.pathname==='/api/references'&&req.method==='GET')return send(res,200,conversions.list());
  if(url.pathname==='/api/references'&&req.method==='POST')return send(res,202,conversions.upload(await raw(req),url.searchParams.get('name')||'source',{background:defaultBackground,settings:workspaceView().data.settings}));
  const refMatch=/^\/api\/references\/([a-f0-9-]{36})(?:\/(generate|generate-all|retry|version))?$/.exec(url.pathname);
@@ -43,6 +45,11 @@ const server=http.createServer(async(req,res)=>{try{
  if(url.pathname==='/api/codex/settings'&&req.method==='PUT')return send(res,200,codex.update(await body(req)));
  if(url.pathname==='/api/codex/start'&&req.method==='POST')return send(res,202,codex.start(await body(req)));
  if(url.pathname==='/api/codex/cancel'&&req.method==='POST')return send(res,200,codex.cancel());
+ if(url.pathname==='/api/publish'&&req.method==='GET')return send(res,200,publisher.status());
+ if(url.pathname==='/api/publish'&&req.method==='POST'){
+  if(!req.headers['content-type']?.startsWith('text/html'))return send(res,415,{error:'发布内容必须是 HTML'});
+  return send(res,201,await publisher.publish(req,{title:url.searchParams.get('title')||'',source:url.searchParams.get('source')||'当前草稿'}));
+ }
  if(url.pathname==='/api/identity')return send(res,200,{app:'onion-deck-studio',version:1});
  if(url.pathname==='/api/masters'&&req.method==='GET')return send(res,200,{default:DEFAULT_MASTER,masters:masterCatalog});
  if(url.pathname==='/api/workspace'&&req.method==='GET')return send(res,200,workspaceView());
