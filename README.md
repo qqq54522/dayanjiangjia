@@ -13,7 +13,7 @@ npm run setup
 npm start
 ```
 
-打开 http://127.0.0.1:8788 。Mac 日常使用可双击 `启动工作台.command`。无需 Pages、Cloudflare 或他人的 ChatGPT 账号；使用第三方 Codex 服务时，按各自的 CLI 配置准备对应的 API Key。首次安装需要联网下载依赖；工作台绑定本机，安装后可离线编辑。运行 `npm run doctor` 可查看每个转换工具的实际路径，`npm run setup:native` 可重新检测并补装缺失工具。
+打开 http://127.0.0.1:8788 。Mac 日常使用可双击 `启动工作台.command`。无需 Pages、Cloudflare 或他人的 ChatGPT 账号；使用第三方 Codex 服务时，可在项目广场或编辑页顶部「设置」选择工作台专用连接，填写该电脑的服务 URL、模型 ID 和 API Key，保存后点击「测试 / 重新连接」。该测试由本机 Codex CLI 发起真实最小请求，不使用演示稿；仅看到「已登录」不代表模型连接成功。密钥仅存本机 `.local/cli-connection.json`，不会在设置页回显或进入 Git。第三方网关须支持 Codex 的 Responses API；若已有完整的本机 Codex 配置，也可直接沿用。首次安装需要联网下载依赖；工作台绑定本机，安装后可离线编辑。运行 `npm run doctor` 可查看每个转换工具的实际路径，`npm run setup:native` 可重新检测并补装缺失工具。
 
 ## 日常使用
 

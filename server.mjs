@@ -6,6 +6,7 @@ import {readFileSync,existsSync,mkdirSync,statSync,createReadStream} from 'node:
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createCodexBridge} from './lib/codex.mjs';
+import {createCliConnection} from './lib/cli-connection.mjs';
 import {createPublisher} from './lib/publish.mjs';
 import {createAppUpdater} from './lib/app-update.mjs';
 import {openStore} from './lib/store.mjs';
@@ -17,9 +18,10 @@ const mediaDir=path.join(dataDir,'media');mkdirSync(mediaDir,{recursive:true});c
 const masters=installMasters(mediaDir);
 const defaultBackground=masters.background();
 const workspaceView=id=>{const v=store.read(id);return {...v,data:masters.hydrate(v.data)}};
-const codex=createCodexBridge({dir:dataDir,store});
+const connection=createCliConnection({dir:dataDir});
+const codex=createCodexBridge({dir:dataDir,store,connection});
 const publisher=createPublisher({dir:dataDir});
-const conversions=createConversions({dir:dataDir});
+const conversions=createConversions({dir:dataDir,connection});
 const updater=createAppUpdater({root,supervised:process.env.DECK_SUPERVISED==='1',onRestart:()=>setTimeout(()=>{codex.close();conversions.close();server.close(()=>{store.close();process.exit(75)})},1000)});
 const send=(res,status,data)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(data))};
 const raw=async(req,limit=Infinity)=>{let size=0;const chunks=[];for await(const b of req){size+=b.length;if(size>limit)throw Object.assign(Error('上传文件超过大小限制'),{status:413});chunks.push(b)}return Buffer.concat(chunks)};
@@ -45,6 +47,9 @@ const server=http.createServer(async(req,res)=>{try{
   if(req.method==='PATCH')return send(res,200,conversions.patch(id,b));
  }
  if(url.pathname==='/api/conversion/cancel'&&req.method==='POST')return send(res,200,conversions.cancel());
+ if(url.pathname==='/api/cli-connection'&&req.method==='GET')return send(res,200,connection.status());
+ if(url.pathname==='/api/cli-connection'&&req.method==='PUT')return send(res,200,connection.save(await body(req)));
+ if(url.pathname==='/api/cli-connection/test'&&req.method==='POST')return send(res,200,await connection.probe());
  if(url.pathname==='/api/codex'&&req.method==='GET')return send(res,200,codex.status());
  if(url.pathname==='/api/codex/settings'&&req.method==='PUT')return send(res,200,codex.update(await body(req)));
  if(url.pathname==='/api/codex/start'&&req.method==='POST')return send(res,202,codex.start(await body(req)));

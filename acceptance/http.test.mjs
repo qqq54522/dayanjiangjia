@@ -1,4 +1,4 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {spawn} from 'node:child_process';import {mkdtempSync,mkdirSync,writeFileSync,rmSync} from 'node:fs';import {tmpdir} from 'node:os';import path from 'node:path';import net from 'node:net';import {once} from 'node:events';
+import test from 'node:test';import assert from 'node:assert/strict';import {spawn} from 'node:child_process';import {mkdtempSync,mkdirSync,writeFileSync,rmSync,statSync} from 'node:fs';import {tmpdir} from 'node:os';import path from 'node:path';import net from 'node:net';import {once} from 'node:events';
 import {mp4,gif} from '../tests/fixtures.mjs';import {FONTS} from '../lib/fonts.mjs';import {unzipSync} from 'fflate';
 async function start(){const dir=mkdtempSync(path.join(tmpdir(),'deck-http-'));mkdirSync(path.join(dir,'fonts'));for(const f of FONTS)writeFileSync(path.join(dir,'fonts',f.name),Buffer.from([0,1,0,0,0,0,0,0]));
  const socket=net.createServer();socket.listen(0,'127.0.0.1');await once(socket,'listening');const port=socket.address().port;await new Promise(r=>socket.close(r));
@@ -67,5 +67,15 @@ test('reference import and review stay separate from the current draft and fixed
  assert.deepEqual(await (await fetch(a.base+'/api/workspace')).json(),before);
  assert.equal((await fetch(a.base+'/api/references?name=old.ppt',{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:png})).status,400);
  assert.equal((await fetch(a.base+'/api/references?name=reference.png',{method:'POST',headers:{'Content-Type':'application/octet-stream',Origin:'https://elsewhere.example'},body:png})).status,403);
+ }finally{await a.stop()}
+});
+
+
+test('CLI connection settings remain private across HTTP and reject cross-origin changes',async()=>{
+ const a=await start(),secret='test-only-http-key-12345';try{
+  const set=await fetch(a.base+'/api/cli-connection',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'custom',baseUrl:'https://relay.example/v1',model:'vendor/model',apiKey:secret})});assert.equal(set.status,200);assert.ok(!(await set.text()).includes(secret));
+  const result=await fetch(a.base+'/api/cli-connection');const text=await result.text();assert.equal(result.status,200);assert.ok(!text.includes(secret));assert.equal(JSON.parse(text).keyConfigured,true);
+  assert.equal(statSync(path.join(a.dir,'cli-connection.json')).mode&0o777,0o600);
+  assert.equal((await fetch(a.base+'/api/cli-connection',{method:'PUT',headers:{'Content-Type':'application/json',Origin:'https://elsewhere.example'},body:'{"mode":"local"}'})).status,403);
  }finally{await a.stop()}
 });
