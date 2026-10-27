@@ -4,7 +4,7 @@ import {validMediaFrame,type MediaFrame} from './media-frame.ts';
 /** Semantic content stays editable independently of the visual template. */
 export type ContentKind='point'|'visual'|'cards'|'compare'|'process'|'table';
 export type ContentItem={design?:ItemDesign;importance?:'key'|'support';interaction?:'none'|'detail'|'media'|'focus';placement?:'main'|'detail';id:string;title:string;body:string;detail:string;media?:string;mediaAspect?:number;mediaFrame?:MediaFrame;crop?:{x:number;y:number;width:number;height:number};value?:string;sourceIds?:string[]};
-export type ContentPresentation={layout?:'auto'|'cover'|'chapter'|'image'|'balanced'|'text'|'cards'|'list'|'chart'|'spotlight';subtitle?:'hidden'|'visible';marker?:'auto'|'number'|'none';columns?:2|3|4|5;evidence?:boolean};
+export type ContentPresentation={layout?:'auto'|'cover'|'chapter'|'image'|'balanced'|'text'|'cards'|'list'|'chart'|'spotlight';subtitle?:'hidden'|'visible';marker?:'auto'|'number'|'none';columns?:2|3|4|5;evidence?:boolean;interaction?:'guided'|'static'};
 export type SlideContent={kind:ContentKind;goal:string;summary:string;items:ContentItem[];presentation?:ContentPresentation;table?:{headers:string[];rows:string[][];focus?:boolean;tagColumns?:number[];seriesColumns?:number[];rowAccents?:boolean;footer?:{label:string;text:string}};lockedItemIds?:string[]};
 export type Chapter={id:string;title:string;visible:boolean;color?:ChapterColor};
 export type SourceLink={purpose?:'content'|'structure';documentId:string;page:number;preview?:string;label:string;extractedText?:string;notes?:string};
@@ -16,10 +16,24 @@ export const contentKinds:readonly [ContentKind,string,string][]=[
 ];
 export const localAsset=(s:unknown):s is string=>typeof s==='string'&&/^\/media\/[\w.-]+$/.test(s);
 const text=(s:unknown,n:number):s is string=>typeof s==='string'&&s.length<=n;
-export function validPresentation(x:unknown):x is ContentPresentation{const p=x as ContentPresentation;return !!p&&(p.layout===undefined||['auto','cover','chapter','image','balanced','text','cards','list','chart','spotlight'].includes(p.layout))&&(p.subtitle===undefined||['hidden','visible'].includes(p.subtitle))&&(p.marker===undefined||['auto','number','none'].includes(p.marker))&&(p.columns===undefined||[2,3,4,5].includes(p.columns))&&(p.evidence===undefined||typeof p.evidence==='boolean')}
+export function validPresentation(x:unknown):x is ContentPresentation{const p=x as ContentPresentation;return !!p&&(p.layout===undefined||['auto','cover','chapter','image','balanced','text','cards','list','chart','spotlight'].includes(p.layout))&&(p.subtitle===undefined||['hidden','visible'].includes(p.subtitle))&&(p.marker===undefined||['auto','number','none'].includes(p.marker))&&(p.columns===undefined||[2,3,4,5].includes(p.columns))&&(p.evidence===undefined||typeof p.evidence==='boolean')&&(p.interaction===undefined||['guided','static'].includes(p.interaction))}
 export function contentLayout(c:SlideContent){if(c.presentation?.layout&&c.presentation.layout!=='auto')return c.presentation.layout;if(c.kind==='visual')return 'image';if(c.kind==='point'&&c.presentation?.layout!=='auto'&&c.items.every(i=>!i.title&&!i.body&&!i.media&&!i.value))return 'chapter';return 'auto'}
 export function contentColumns(c:SlideContent){const n=c.items.filter(i=>i.placement!=='detail').length;if(c.presentation?.columns)return c.presentation.columns;if(c.kind==='compare')return 2;return n<=5?Math.max(1,n):3}
 export function hasDetail(i:ContentItem){return i.interaction==='detail'&&!!i.detail.trim()}
+/** New AI-created pages get dependable presenter controls; existing drafts are never migrated. */
+export function prepareGeneratedInteractions(content:SlideContent):SlideContent{
+ if(content.presentation?.interaction==='static')return content;
+ const layout=contentLayout(content);
+ if(['cover','chapter','image','chart','spotlight'].includes(layout))return content;
+ const main=content.items.filter(i=>i.placement!=='detail');
+ if(['cards','compare'].includes(content.kind)&&main.length>=2){
+  return {...content,presentation:{...content.presentation,interaction:'guided'},items:content.items.map(i=>i.placement==='detail'||hasDetail(i)?i:{...i,interaction:'focus'})};
+ }
+ if(content.kind==='table'&&content.table&&content.table.rows.length>=2&&content.table.headers.length>=2){
+  return {...content,presentation:{...content.presentation,interaction:'guided'},table:{...content.table,focus:true}};
+ }
+ return content;
+}
 export function numberedItems(c:SlideContent){return c.presentation?.marker==='number'||(c.presentation?.marker!=='none'&&!c.items.filter(i=>i.placement!=='detail').some(i=>i.media||i.value)&&(c.kind==='cards'||c.kind==='compare'))}
 export function validContent(x:unknown):x is SlideContent{
  const c=x as SlideContent;

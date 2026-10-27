@@ -12,6 +12,12 @@ test('rendered presentation respects explicit visibility, meaningful interaction
  s.composition.sequence='carousel';assert.ok(html(s).includes('gallery-frame'));
  }finally{await vite.close()}
 });
+test('focused media cards expose separate card and media controls in the standalone scene',async()=>{
+ const vite=await createServer({server:{middlewareMode:true,hmr:false,watch:null},appType:'custom'});
+ try{const{Scene}=await vite.ssrLoadModule('/app/Scene.tsx');const s={...initial.slides[0],content:{kind:'cards',goal:'逐项讲解',summary:'',items:[{id:'picture',title:'图片',body:'',detail:'',interaction:'focus',media:'/media/demo.gif'},{id:'film',title:'视频',body:'',detail:'',interaction:'focus',media:'/media/film.mp4'}]}};const h=renderToStaticMarkup(React.createElement(Scene,{s}));assert.equal((h.match(/class="content-focus-hit"/g)||[]).length,2);assert.match(h,/aria-label="聚焦图片"[^>]*data-active="false"|data-active="false"[^>]*aria-label="聚焦图片"/);assert.match(h,/aria-label="放大查看图片或动画"/);assert.match(h,/aria-label="放大播放视频"/);assert.match(h,/data-gallery="close" hidden=""/);
+  s.content.items[0].crop={x:0,y:0,width:.5,height:.5};s.content.items[0].mediaAspect=1;const cropped=renderToStaticMarkup(React.createElement(Scene,{s}));assert.match(cropped,/class="content-crop"[^>]*data-detail-open="0"/);assert.match(cropped,/dialog class="content-detail" data-detail="0"/);
+ }finally{await vite.close()}
+});
 
 test('style gallery renders every classic and semantic example and enforces actual capacity',async()=>{
  const vite=await createServer({server:{middlewareMode:true,hmr:false,watch:null},appType:'custom'});
