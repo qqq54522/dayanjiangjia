@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {mkdtempSync,mkdirSync,readFileSync,writeFileSync,existsSync,rmSync,statSync,copyFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
+import {execFileSync} from 'node:child_process';
 import {exportTeamConfig,importTeamConfig,teamConfigName} from '../lib/team-config.mjs';
 import {ensureNative,nativeStatus} from '../lib/native-setup.mjs';
 import {tool} from '../lib/native-tools.mjs';
@@ -52,4 +53,17 @@ test('Windows installer selects verified package IDs and existing executable ove
   ensureNative({platform:'win32',probe:name=>available.has(name),install});
   assert.deepEqual(calls.filter(call=>call[1]==='install').map(call=>call[3]),['TheDocumentFoundation.LibreOffice','oschwartz10612.Poppler','Gyan.FFmpeg']);
  }finally{if(previous===undefined)delete process.env.DECK_FFMPEG;else process.env.DECK_FFMPEG=previous;rmSync(root,{recursive:true,force:true})}
+});
+
+test('native converter locations survive an update in the ignored local directory',()=>{
+ const root=mkdtempSync(path.join(tmpdir(),'native-cache-'));
+ try{
+  const executable=path.join(root,'converter');
+  writeFileSync(executable,'');
+  const moduleUrl=new URL('../lib/native-tools.mjs',import.meta.url).href;
+  const script=`import {tool,rememberNativeTools} from ${JSON.stringify(moduleUrl)}; process.env.DECK_FFMPEG=${JSON.stringify(executable)}; rememberNativeTools(['ffmpeg']); delete process.env.DECK_FFMPEG; console.log(tool('ffmpeg'));`;
+  const result=execFileSync(process.execPath,['--input-type=module','-e',script],{cwd:root,encoding:'utf8'}).trim();
+  assert.equal(result,executable);
+  assert.equal(JSON.parse(readFileSync(path.join(root,'.local','native-tools.json'),'utf8')).ffmpeg,executable);
+ }finally{rmSync(root,{recursive:true,force:true})}
 });

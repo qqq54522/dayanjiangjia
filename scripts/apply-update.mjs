@@ -1,4 +1,6 @@
 import {execFileSync,spawnSync} from 'node:child_process';
+import {existsSync} from 'node:fs';
+import path from 'node:path';
 import {localUpdateState} from '../lib/app-update.mjs';
 
 const [remote,target]=process.argv.slice(2);
@@ -13,6 +15,8 @@ const fetched=git('rev-parse','FETCH_HEAD');
 if(fetched!==target)throw Error('远端 main 在检查后发生变化，请重新检查更新');
 if(spawnSync('git',['merge-base','--is-ancestor',before.current,target],{cwd:root}).status!==0)throw Error('本地 main 与远端存在分叉，请让 Codex 处理；没有覆盖本地代码');
 git('merge','--ff-only',target);
-const install=spawnSync(process.execPath,['scripts/setup.mjs'],{cwd:root,stdio:'inherit',timeout:30*60*1000});
-if(install.status!==0)throw Error('代码已拉取，但安装或构建失败；请在终端运行 npm run setup 后重启工作台');
+const dependenciesChanged=git('diff','--name-only',before.current,target,'--','package.json','package-lock.json').length>0;
+const reuseNodeModules=!dependenciesChanged&&existsSync(path.join(root,'node_modules','.package-lock.json'));
+const install=spawnSync(process.execPath,['scripts/setup.mjs','--update',...(reuseNodeModules?['--reuse-node-modules']:[])],{cwd:root,stdio:'inherit',timeout:30*60*1000});
+if(install.status!==0)throw Error('代码已拉取，但 Node 依赖、字体或构建失败；请在终端运行 npm run setup 后重启工作台');
 console.log('更新完成：'+target);
