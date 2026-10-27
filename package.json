@@ -8,10 +8,12 @@
   },
   "scripts": {
     "setup": "node scripts/setup.mjs",
+    "setup:native": "node scripts/ensure-native.mjs",
     "start": "node scripts/run.mjs",
     "build": "node scripts/build-masters.mjs && vite build",
     "check": "tsc --noEmit && node --test tests/*.test.mjs",
     "doctor": "node scripts/doctor.mjs",
+    "team-config": "node scripts/team-config.mjs",
     "workspace": "node scripts/workspace.mjs",
     "update": "node scripts/update.mjs",
     "share-code": "node scripts/share-code.mjs",

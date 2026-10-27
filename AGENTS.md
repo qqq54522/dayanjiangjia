@@ -6,8 +6,8 @@
 - 工作台在本机运行。用户点击「发布」时，才把独立播放 HTML 上传到已配置的内网静态存储；不要自动发布、配置 Pages、绕开本机 Codex CLI 直接调用模型 API 或发送飞书消息。工具代码可以在验证后同步到已指定的 GitHub 仓库，业务文稿和素材不可推送。
 
 ## 首次安装与启动
-1. 确认 Node.js >=24，Git 已安装；公开 GitHub 仓库可直接克隆。若将来改为私密，各人须用自己的 GitHub 身份取得访问权，不复制他人私钥，不索取密码。
-2. 执行 `npm run setup`：锁定依赖安装、类型检查、隔离测试、构建。
+1. 确认 Git 已安装；公开 GitHub 仓库可直接克隆。若将来改为私密，各人须用自己的 GitHub 身份取得访问权，不复制他人私钥，不索取密码。Mac 可运行 `安装工作台.command`，Windows 可运行 `安装工作台.cmd`：入口会补装缺失的 Node.js 24，`npm run setup` 会复用已有转换工具并通过 Homebrew/WinGet 补装缺失项。系统可能要求管理员确认；安装受公司设备策略限制时说明具体失败项。
+2. 已有 Node.js >=24 时可执行 `npm run setup`：锁定依赖安装、类型检查、隔离测试、构建，准备字体并检查 LibreOffice、Poppler、FFmpeg。运行 `npm run doctor` 核对实际可执行文件路径。
 3. 执行 `npm start`，打开 `http://127.0.0.1:8788`。已有该服务时先检查 `npm run doctor`，不要重复启动。
 4. 数据目录 `.local/`，默认仅绑定 127.0.0.1。不要改成对外监听，不需要云数据库；第三方 Codex 服务所需 Key 由各人本机配置，不能写入工具代码。
 
@@ -25,6 +25,7 @@
 - CLI：`npm run workspace -- export exports/讲品稿.deck.zip`；用户明确要求导入时可 `npm run workspace -- import imports/讲品稿.deck.zip`。
 - 一份文稿包包含完整反馈、讲述提示和版本。只需对外播放时导出 HTML，HTML 不含内部备注与反馈。
 - 顶部「发布」将当前草稿导出为独立 HTML 并上传到内网静态站，返回 HTTPS 播放链接。每次发布使用新对象键，不覆盖历史发布。网关地址和 API Key 只存在本机 `.local/publish-config.json` 或本机环境变量，严禁提交或写入前端代码。发布记录保存在 `.local/publications.json`，存储生命周期以网关返回值为准。
+- 公司共用发布配置可由已配置电脑运行 `npm run team-config -- export`，把忽略的 `delivery/company-publish-config.json` 通过公司内部受控渠道交给有权限的同事。同事将文件放到项目根目录，`npm run setup` 会导入 `.local/` 并移除根目录副本；已有本机配置不覆盖。此文件包含共享 API Key，绝不提交 Git、放入文稿包或公开传播。
 - 外部 HTTPS 图片导出便携包前须由用户或 Codex 下载并通过网页上传。不得在源代码里内嵌用户素材。
 
 ## 工具代码协作

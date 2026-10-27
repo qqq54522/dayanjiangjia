@@ -4,14 +4,16 @@
 
 ## 第一次使用
 
-需要 Git、Node.js 24 或更新版本。公开仓库可直接克隆；若仓库将来改为私密，需先获得访问权限并在自己的电脑配置 GitHub 身份。请让自己的 Codex 阅读 [AGENTS.md](AGENTS.md)，执行：
+需要 Git。公开仓库可直接克隆；若仓库将来改为私密，需先获得访问权限并在自己的电脑配置 GitHub 身份。首次安装推荐运行：Mac 双击 `安装工作台.command`，Windows 双击 `安装工作台.cmd`。安装入口会检测 Node.js 24、LibreOffice、Poppler、FFmpeg；缺失时通过 Homebrew 或 WinGet 安装，系统可能要求管理员确认和联网。已有工具会复用。Mac 尚未安装 Homebrew 时会运行其官方安装程序；Windows 缺少 WinGet 时需先安装 Microsoft App Installer。
+
+如果已经有 Node.js 24 或更新版本，也可以让自己的 Codex 阅读 [AGENTS.md](AGENTS.md)，执行：
 
 ```sh
 npm run setup
 npm start
 ```
 
-打开 http://127.0.0.1:8788 。Mac 也可以双击 `启动工作台.command`。无需 Pages、Cloudflare 或他人的 ChatGPT 账号；使用第三方 Codex 服务时，按各自的 CLI 配置准备对应的 API Key。首次安装需要联网下载依赖；工作台绑定本机，安装后可离线编辑。
+打开 http://127.0.0.1:8788 。Mac 日常使用可双击 `启动工作台.command`。无需 Pages、Cloudflare 或他人的 ChatGPT 账号；使用第三方 Codex 服务时，按各自的 CLI 配置准备对应的 API Key。首次安装需要联网下载依赖；工作台绑定本机，安装后可离线编辑。运行 `npm run doctor` 可查看每个转换工具的实际路径，`npm run setup:native` 可重新检测并补装缺失工具。
 
 ## 日常使用
 
@@ -21,7 +23,7 @@ npm start
 - 生成固定播出版本后，后续改稿不会改变它。工作台中的预演只在本机访问；通过「发布」生成的内网链接可在获准访问内网的设备上播放。
 - 顶部「发布」可把当前草稿生成独立播放网页，上传到已配置的内网静态站，得到手机、iPad、电脑可打开的 HTTPS 链接。发布是手动操作，每次得到新链接；历史链接会在「发布」弹窗保留。播放页不含讲述提示和内部反馈。链接的可访问范围及保留时间由内网存储服务决定。
 
-发布配置和接口见 [内网发布说明](docs/内网发布.md)。网关 API Key 只保存在本机，不能提交到仓库。
+发布配置和接口见 [内网发布说明](docs/内网发布.md)。公司统一网关可由已配置的负责人导出一份 `company-publish-config.json`，通过内部渠道交给同事；同事把它放在项目根目录，首次安装时会自动导入本机 `.local/` 并移除根目录临时副本。这个文件包含共用 API Key，不能提交到仓库或发到公开链接。
 - 文稿尚未做长期效果或营销事实核验，工具不会自动给出提分承诺。
 
 ## 与同事交换文稿
@@ -46,7 +48,7 @@ npm run share-code -- "新增功能的简短说明"
 
 ## 检查
 
-`npm run doctor` 检查安装/服务；`npm run check` 执行类型检查与隔离测试；`npm run guard` 检查仓库文件边界。
+`npm run doctor` 检查安装/服务和转换工具路径；`npm run setup:native` 补装缺失的转换工具；`npm run check` 执行类型检查与隔离测试；`npm run guard` 检查仓库文件边界。
 
 技术：React + Vite、Node 内置 HTTP 与 SQLite。无云端数据库；自动改稿通过各人本机 Codex CLI 调用其配置的模型服务。所有自动化详细约定见 AGENTS.md。
 
