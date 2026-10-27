@@ -31,11 +31,11 @@ test('existing third-party Codex CLI config is detected and used without app cre
  const dir=mkdtempSync(path.join(tmpdir(),'cli-inherited-')),home=path.join(dir,'codex-home');mkdirSync(home);
  const key='local-test-key-never-returned';const env={CODEX_HOME:home,RELAY_TOKEN:key,PATH:process.env.PATH};
  writeFileSync(path.join(home,'config.toml'),`model_provider = "company_relay"\nmodel = "relay-model"\n\n[model_providers.company_relay]\nname = "Company"\nbase_url = "https://relay.example/v1/private-path-token"\nenv_key = "RELAY_TOKEN"\nwire_api = "responses"\n`);
- const run=args=>args[0]==='--version'?{status:0,stdout:'codex-cli test'}:{status:1,stdout:''};
+ const run=args=>{assert.deepEqual(args,['--version']);return {status:0,stdout:'codex-cli test'}};
  let args,options;const launch=(cmd,callArgs,callOptions)=>{assert.equal(cmd,'codex');args=callArgs;options=callOptions;const child=new EventEmitter();child.stdout=new PassThrough();child.stderr=new PassThrough();child.kill=()=>{};queueMicrotask(()=>{child.stdout.write('{"type":"turn.completed"}\n');child.emit('close',0)});return child};
  try{
   const detected=inspectLocalCodexConfig(home,env);assert.equal(detected.provider,'company_relay');assert.equal(detected.model,'relay-model');assert.equal(detected.baseUrl,'https://relay.example');assert.match(detected.credential,/已检测到/);assert.ok(!JSON.stringify(detected).includes(key));
-  const connection=createCliConnection({dir,launch,run,env});const status=connection.status();assert.equal(status.mode,'local');assert.equal(status.model,'relay-model');assert.equal(status.baseUrl,'https://relay.example');assert.ok(!JSON.stringify(status).includes(key));
+  const connection=createCliConnection({dir,launch,run,env});const status=connection.status();assert.equal(status.mode,'local');assert.equal(status.model,'relay-model');assert.equal(status.baseUrl,'https://relay.example');assert.match(status.authentication,/无需 OpenAI 登录/);assert.ok(!('loginStatus' in status));assert.ok(!JSON.stringify(status).includes(key));
   const result=await connection.probe();assert.equal(result.lastTest.ok,true);assert.ok(!args.includes('--model'));assert.ok(!args.includes('-c'));assert.equal(options.env.RELAY_TOKEN,key);
   writeFileSync(path.join(dir,'codex-settings.json'),JSON.stringify({model:'explicit-override',effort:''}));assert.equal(connection.status().modelOverride,'explicit-override');await connection.probe();assert.equal(args[args.indexOf('--model')+1],'explicit-override');
  }finally{rmSync(dir,{recursive:true,force:true})}
@@ -44,6 +44,11 @@ test('existing third-party Codex CLI config is detected and used without app cre
 test('missing inherited environment key is reported without falsely requiring OpenAI login',()=>{
  const home=mkdtempSync(path.join(tmpdir(),'cli-config-'));
  try{writeFileSync(path.join(home,'config.toml'),'model_provider = "relay"\n[model_providers.relay]\nbase_url = "https://relay.example/v1"\nenv_key = "RELAY_TOKEN"\n');const status=inspectLocalCodexConfig(home,{});assert.equal(status.provider,'relay');assert.match(status.credential,/未传入工作台/)}finally{rmSync(home,{recursive:true,force:true})}
+});
+
+test('a third-party provider that explicitly requests OpenAI auth is labelled separately',()=>{
+ const home=mkdtempSync(path.join(tmpdir(),'cli-auth-mode-'));
+ try{writeFileSync(path.join(home,'config.toml'),'model_provider = "relay"\n[model_providers.relay]\nbase_url = "https://relay.example/v1"\nrequires_openai_auth = true\n');const status=inspectLocalCodexConfig(home,{});assert.match(status.authentication,/使用 OpenAI 认证/)}finally{rmSync(home,{recursive:true,force:true})}
 });
 
 test('invalid URLs and missing model or key are rejected before any connection attempt',()=>{
