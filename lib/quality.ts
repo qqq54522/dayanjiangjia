@@ -25,7 +25,7 @@ export function reviewSlide(s:Slide,settings:PresentationSettings={display:'scre
   if(c.table&&(c.table.headers.length>(live?3:5)||c.table.rows.length>(live?4:7)))add('dense-table','表格超出建议的主画面阅读密度','按一个比较维度提取摘要，完整证据保留在详情或补充页。');
   if(c.kind==='visual'&&!main.some(i=>i.media))add('missing-visual','大画面页还没有可展示的素材','添加图片或视频，或改用观点页。');
   if(c.items.some(i=>i.importance==='key'&&i.placement==='detail'))add('key-in-detail','关键内容被放入补充详情','让关键主张或数字回到主画面；如确需移出，应逐项说明并确认。');
-  if(['cover','chapter','image','carousel'].includes(contentLayout(c))&&main.some(i=>i.importance==='key'&&(i.title||i.body||i.value)))add('key-layout','当前版式不会展示关键模块文字','选择图文或卡片版式，或把关键主张明确放到大标题。');
+  if(['cover','chapter','image','carousel'].includes(layout)&&main.some(i=>i.importance==='key'&&(i.title||i.body||i.value)&&!(layout==='carousel'&&c.presentation?.carouselText&&i.media&&!i.value)))add('key-layout','当前版式不会展示关键模块文字','选择图文或卡片版式，或把关键主张明确放到大标题。');
   if(count>=4&&contentColumns(c)>=4&&main.some(i=>i.title.length+i.body.length>45))add('dense-cards','多栏中的解释较长','保留总览关系，精简重复文字或改为双行布局；必要时另加详页。');
  }else if(s.subtitle.length+s.points.join('').length>(live?150:260))add('dense-copy','主画面文字较多','明确这一页的一个讲述目标，再精简或拆页。');
  return issues;

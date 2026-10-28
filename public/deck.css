@@ -109,6 +109,19 @@
 .scene-brand[data-tone="dark"] .logo-dark{display:block}
 .free-scene>.scene-brand{background:transparent;padding:0;border-radius:0}
 
+/* Optional editable copy travels in the same carousel frame as its media. */
+.gallery-caption-media{position:relative;display:flex;flex:1;min-height:0;width:100%;align-items:center;justify-content:center}
+.scene .media-item.with-caption{gap:.7cqw;padding:.8cqw}
+.scene .media-item>.gallery-caption-title{flex:none;font-size:2.3cqw;line-height:1.25;font-weight:800;white-space:pre-wrap;overflow-wrap:anywhere;text-align:left;color:#2e2e3a;margin:0}
+.scene .media-item>.gallery-caption-body{flex:none;font-size:1.6cqw;line-height:1.35;white-space:pre-wrap;overflow-wrap:anywhere;text-align:left;color:#2e2e3a;margin:0}
+.media-lightbox.with-captions[open]{display:flex;flex-direction:column;gap:12px}
+.scene-media .media-lightbox.with-captions>img,.media-lightbox.with-captions>video{flex:1;min-height:0;height:0}
+.lightbox-caption{flex:none;text-align:center}
+.lightbox-caption h2,.lightbox-caption p{margin:0;color:white;white-space:pre-wrap;overflow-wrap:anywhere}
+.lightbox-caption h2{font-size:clamp(18px,2vw,28px);line-height:1.25}
+.lightbox-caption p{font-size:clamp(16px,1.5vw,22px);line-height:1.3;margin-top:6px}
+.lightbox-caption [hidden]{display:none}
+
 /* Approved comic studio template. Scoped so custom designs and alternate palettes survive. */
 .scene.comic-default{background:#d9f1ff;color:#2e2e3a;isolation:isolate;--live-blue:var(--onion-brand-blue);--live-yellow:#ffd633}
 .comic-backdrop,.comic-dots{position:absolute;inset:0;z-index:-1;pointer-events:none}

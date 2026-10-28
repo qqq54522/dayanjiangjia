@@ -4,13 +4,14 @@ import {initGallery} from '../lib/gallery.ts';
 
 function setup(initialize=initGallery,autoplay=false,video=false,options={}){
  const listeners=new Map(),doc=new EventTarget(),scene=new EventTarget();doc.hidden=false;
+ const captionTitle={},captionBody={};
  const play={attrs:{},setAttribute(k,v){this.attrs[k]=v}},track={style:{}},counts=[{}],large={};
- const images=[0,1,2].map(i=>{const frame={setAttribute(){},hidden:false,inert:false};return {src:i+'.png',tagName:video&&i===1?'VIDEO':'IMG',pause(){this.paused=true},closest(){return frame},frame}});
- const dialog={open:false,classList:{toggle(){}},addEventListener(){},removeEventListener(){},querySelector:s=>s==='img'?large:null,showModal(){this.open=true},close(){this.open=false}};
+ const images=[0,1,2].map(i=>{const frame={dataset:options.captions?.[i],setAttribute(){},hidden:false,inert:false};return {src:i+'.png',tagName:video&&i===1?'VIDEO':'IMG',pause(){this.paused=true},closest(){return frame},frame}});
+ const dialog={open:false,classList:{toggle(){}},addEventListener(){},removeEventListener(){},querySelector:s=>s==='img'?large:s==='[data-gallery-caption-title]'?captionTitle:s==='[data-gallery-caption-body]'?captionBody:null,showModal(){this.open=true},close(){this.open=false}};
  const root={dataset:{carousel:'true',gallerySeconds:String(options.seconds??4),galleryAutoplay:String(autoplay)},ownerDocument:doc,closest:()=>scene,querySelectorAll:s=>s.includes('img')?images:counts,querySelector:s=>s==='dialog'?dialog:s==='.gallery-track'?track:s==='[data-gallery="play"]'&&options.controls!==false?play:null,addEventListener:(t,f)=>{if(!listeners.has(t))listeners.set(t,new Set());listeners.get(t).add(f)},removeEventListener:(t,f)=>{listeners.get(t)?.delete(f);if(!listeners.get(t)?.size)listeners.delete(t)}};
  const fire=(type,extra={})=>{const e={stopPropagation(){this.stopped=true},preventDefault(){this.prevented=true},target:{closest:()=>null},...extra};for(const f of listeners.get(type)||[])f(e);return e};
  const clean=initialize(root),click=action=>fire('click',{target:{closest:s=>s==='[data-gallery]'?{dataset:{gallery:action}}:null}});
- return {clean,click,fire,listeners,doc,scene,play,track,counts,images,dialog,large};
+ return {clean,click,fire,listeners,doc,scene,play,track,counts,images,dialog,large,captionTitle,captionBody};
 }
 test('carousel is manual by default; auto advance, user interruption and cleanup are shared with export',t=>{
  t.mock.timers.enable({apis:['setInterval']});
@@ -39,4 +40,16 @@ test('touch pointers do not double-advance; horizontal wheel inertia switches on
 test('page leave, backgrounding and video frames pause the timer without playing video',t=>{
  t.mock.timers.enable({apis:['setInterval']});const f=setup(initGallery,true);t.mock.timers.tick(4000);assert.equal(f.counts[0].textContent,'2 / 3');f.scene.dispatchEvent(new Event('presentation-leave'));t.mock.timers.tick(8000);assert.equal(f.counts[0].textContent,'2 / 3');f.scene.dispatchEvent(new Event('presentation-reset'));assert.equal(f.counts[0].textContent,'1 / 3');f.doc.hidden=true;f.doc.dispatchEvent(new Event('visibilitychange'));t.mock.timers.tick(8000);assert.equal(f.counts[0].textContent,'1 / 3');f.clean();
  const v=setup(initGallery,true,true);t.mock.timers.tick(4000);assert.equal(v.counts[0].textContent,'2 / 3');assert.equal(v.play.attrs['aria-pressed'],'false');t.mock.timers.tick(8000);assert.equal(v.counts[0].textContent,'2 / 3');assert.equal(v.images[1].paused,true);v.clean();
+});
+
+test('captions stay paired with media through swipes, modal advance, autoplay and player reset',t=>{
+ t.mock.timers.enable({apis:['setInterval','Date'],now:1000});
+ const captions=[{galleryTitle:'First case',galleryBody:'First explanation'},{galleryTitle:'Second case',galleryBody:''},{galleryTitle:'Third case',galleryBody:'Third explanation'}];
+ for(const init of [initGallery,new Function('return '+initGallery.toString())()]){
+  const f=setup(init,true,false,{captions,controls:false});
+  t.mock.timers.tick(4000);f.click('open');assert.equal(f.large.src,'1.png');assert.equal(f.large.alt,'Second case');assert.equal(f.captionTitle.textContent,'Second case');assert.equal(f.captionBody.hidden,true);
+  f.fire('touchstart',{touches:[{clientX:200,clientY:100}]});f.fire('touchend',{changedTouches:[{clientX:100,clientY:100}]});assert.equal(f.large.src,'2.png');assert.equal(f.captionTitle.textContent,'Third case');assert.equal(f.captionBody.textContent,'Third explanation');assert.equal(f.captionBody.hidden,false);
+  f.fire('keydown',{key:'ArrowRight'});assert.equal(f.large.src,'0.png');assert.equal(f.captionTitle.textContent,'First case');
+  f.scene.dispatchEvent(new Event('presentation-reset'));assert.equal(f.large.src,'0.png');assert.equal(f.captionBody.textContent,'First explanation');f.clean();
+ }
 });

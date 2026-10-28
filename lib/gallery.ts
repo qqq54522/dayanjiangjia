@@ -16,6 +16,12 @@ export function initGallery(root: HTMLElement) {
   const pause = () => images.forEach(el=>{if(isVideo(el))(el as HTMLVideoElement).pause()});
   const syncModal = () => {
     const current=images[index],video=isVideo(current);
+    const frame=current.closest?.<HTMLElement>('.media-item');
+    const title=frame?.dataset?.galleryTitle||'',body=frame?.dataset?.galleryBody||'';
+    const heading=dialog.querySelector<HTMLElement>('[data-gallery-caption-title]'),copy=dialog.querySelector<HTMLElement>('[data-gallery-caption-body]');
+    if(heading){heading.textContent=title;heading.hidden=!title}
+    if(copy){copy.textContent=body;copy.hidden=!body}
+    enlarged.alt=title||(current as HTMLImageElement).alt||'';
     enlarged.hidden=video;
     if(enlargedVideo){enlargedVideo.pause();enlargedVideo.hidden=!video;}
     dialog.classList.toggle('showing-video',video);
