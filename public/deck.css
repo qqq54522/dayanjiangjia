@@ -594,7 +594,9 @@
 .gallery[data-carousel=true] .gallery-frame{overflow:hidden}
 .gallery-track{height:100%;width:100%;display:flex;transition:transform .44s cubic-bezier(.2,.7,.2,1)}
 .gallery-track>.media-item{position:relative;flex:0 0 100%;width:100%;height:100%;min-width:0}
-.gallery[data-carousel=true] .gallery-controls{font-size:1.3cqw;padding:.1cqw 0}
+.gallery[data-carousel=true] .gallery-frame,.gallery[data-carousel=true] .image-open{cursor:grab}
+.gallery[data-carousel=true] .media-lightbox{padding-bottom:18px}
+.gallery[data-carousel=true] .media-lightbox.showing-video{padding-bottom:80px}
 .inline-step-overview{position:relative;display:flex;min-height:0;flex:1}
 .content-layout-process-cards .content-items{gap:2.2cqw}
 .scene.content-layout-process-cards .content-item{align-items:center;text-align:center;padding:1.3cqw 1cqw;gap:1cqw}

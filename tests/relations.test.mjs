@@ -38,8 +38,8 @@ test('confirmed six-node loop keeps the original geometry, four arcs and all six
 });
 test('new presentation options validate strictly and are available to both local CLI paths',()=>{
  const c=applyVariant(source(),'carousel').content;
- assert.ok(validContent({...c,presentation:{layout:'carousel',autoplay:false,autoplaySeconds:8}}));
- for(const p of [{layout:'unknown'},{autoplay:'yes'},{autoplaySeconds:0},{autoplaySeconds:NaN},{relationMode:'random'},{resultId:2}])assert.equal(validContent({...c,presentation:p}),false);
+ for(const seconds of [1,2.5,3,4,6,8,3600])assert.ok(validContent({...c,presentation:{layout:'carousel',autoplay:false,autoplaySeconds:seconds}}));
+ for(const p of [{layout:'unknown'},{autoplay:'yes'},{autoplaySeconds:0},{autoplaySeconds:-1},{autoplaySeconds:3601},{autoplaySeconds:Infinity},{autoplaySeconds:NaN},{autoplaySeconds:'3'},{relationMode:'random'},{resultId:2}])assert.equal(validContent({...c,presentation:p}),false);
  for(const rules of [codexRules,conversionRules])for(const name of ['carousel','process-cards','induction','converge','cycle','resultId','bridgeId'])assert.ok(rules.includes(name),name);
  const s=source(),next=applyVariant(s,'cycle');const output={summary:'保留事实，显示循环关系',slides:[{id:s.id,title:s.title,subtitle:s.subtitle,points:s.points,note:s.note,layout:s.layout,theme:'brand',designJson:null,compositionJson:null,contentJson:JSON.stringify(next.content)}]};
  assert.equal(proposalFrom(output,{revision:4,data:{slides:[s]}},'all').slides[0].content.presentation.layout,'cycle');
@@ -53,7 +53,7 @@ test('rendered and exported markup preserves relation text, media, summaries and
    if(variant==='induction'){const svg=html.match(/<svg class="relation-connections"[\s\S]*?<\/svg>/)[0],paths=(svg.match(/<path\b[^>]*>/g)||[]).slice(1);assert.ok(paths[0]);assert.ok(!paths[0].includes('marker-end='));assert.ok(paths[1].includes('marker-end='))}
    const editor=renderToStaticMarkup(React.createElement(ContentEditor,{s,doc:{...initial,slides:[s]},change:()=>{},tab:'media'}));assert.ok(editor.includes('关系与推导'));assert.ok(editor.includes('关系如何表达'));
   }
-  const carousel=applyVariant(source(),'carousel');carousel.content.items.push({...items[1],media:'/media/two.png'});const h=renderToStaticMarkup(React.createElement(Scene,{s:carousel}));assert.ok(h.includes('gallery-track'));assert.ok(h.includes('data-gallery="play"'));assert.ok(!h.includes('data-gallery-autoplay="true"'));
+  const carousel=applyVariant(source(),'carousel');carousel.content.items.push({...items[1],media:'/media/two.png'});const h=renderToStaticMarkup(React.createElement(Scene,{s:carousel}));assert.ok(h.includes('gallery-track'));assert.ok(!h.includes('gallery-controls'));assert.ok(!h.includes('gallery-count'));assert.ok(!h.includes('data-gallery="play"'));assert.ok(!h.includes('data-gallery-autoplay="true"'));
   const stepSlide=applyVariant(source(),'process-cards');stepSlide.content.items[0].interaction='none';const steps=renderToStaticMarkup(React.createElement(Scene,{s:stepSlide}));assert.ok(steps.includes('inline-step-overview'));assert.equal((steps.match(/class="content-number"/g)||[]).length,6);assert.ok(!steps.includes('step-media-stage'));assert.equal((steps.match(/data-overview-focus=/g)||[]).length,5);
  }finally{await vite.close()}
 });

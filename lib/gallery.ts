@@ -8,7 +8,8 @@ export function initGallery(root: HTMLElement) {
   const playButton=root.querySelector<HTMLElement>('[data-gallery="play"]');
   const scene=root.closest?.<HTMLElement>('.scene');
   const doc=root.ownerDocument||(typeof document==='undefined'?undefined:document);
-  const seconds=[4,6,8].includes(Number(root.dataset?.gallerySeconds))?Number(root.dataset.gallerySeconds):6;
+  const requestedSeconds=Number(root.dataset?.gallerySeconds);
+  const seconds=Number.isFinite(requestedSeconds)&&requestedSeconds>=1&&requestedSeconds<=3600?requestedSeconds:6;
   let ticker:ReturnType<typeof setInterval>|undefined,visible=true,automatic=root.dataset?.galleryAutoplay==='true';
   const stopAuto=()=>{if(ticker)clearInterval(ticker);ticker=undefined;playButton?.setAttribute('aria-pressed','false');if(playButton)playButton.textContent='自动播放'};
   const isVideo = (el: Element) => el.tagName === 'VIDEO';
@@ -94,6 +95,17 @@ export function initGallery(root: HTMLElement) {
     }
   };
   const cancel = (e: Event) => { e.stopPropagation();start=null;suppressClickUntil=Date.now()+800; };
+  // Mouse/pen dragging and horizontal trackpad gestures share the touch behavior.
+  // Keep touch pointers on the existing touch path so one swipe cannot advance twice.
+  let drag:{id:number;x:number;y:number;moved:boolean}|null=null;
+  const dragDown=(e:PointerEvent)=>{if(!track||images.length<2||e.pointerType==='touch'||e.button!==0||(e.target as Element)?.closest?.('video,[data-gallery="close"],.gallery-controls'))return;drag={id:e.pointerId,x:e.clientX,y:e.clientY,moved:false}};
+  const dragMove=(e:PointerEvent)=>{if(!drag||drag.id!==e.pointerId)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.hypot(dx,dy)>12)drag.moved=true;if(Math.abs(dx)>12&&Math.abs(dx)>Math.abs(dy)*1.3){e.preventDefault();e.stopPropagation();if(!root.hasPointerCapture?.(e.pointerId))root.setPointerCapture?.(e.pointerId)}};
+  const dragUp=(e:PointerEvent)=>{if(!drag||drag.id!==e.pointerId)return;const d=drag;drag=null;const dx=e.clientX-d.x,dy=e.clientY-d.y;if(d.moved||Math.hypot(dx,dy)>12){suppressClickUntil=Date.now()+800;e.preventDefault();e.stopPropagation();if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.3)show(dx<0?1:-1)}if(root.hasPointerCapture?.(e.pointerId))root.releasePointerCapture?.(e.pointerId)};
+  const dragCancel=()=>{if(drag?.moved)suppressClickUntil=Date.now()+800;drag=null};
+  let wheelTime=0,wheelDistance=0,wheelSwitched=false;
+  const wheel=(e:WheelEvent)=>{if(!track||images.length<2||e.ctrlKey||Math.abs(e.deltaX)<2||Math.abs(e.deltaX)<=Math.abs(e.deltaY)*1.3||(e.target as Element)?.closest?.('video'))return;e.preventDefault();e.stopPropagation();const now=Date.now();if(now-wheelTime>200){wheelDistance=0;wheelSwitched=false}wheelTime=now;wheelDistance+=e.deltaX*(e.deltaMode===1?16:e.deltaMode===2?root.clientWidth:1);if(!wheelSwitched&&Math.abs(wheelDistance)>45){wheelSwitched=true;suppressClickUntil=now+800;show(wheelDistance>0?1:-1)}};
+  const preventDrag=(e:Event)=>{if(track)e.preventDefault()};
+  if(track){root.addEventListener('pointerdown',dragDown);root.addEventListener('pointermove',dragMove);root.addEventListener('pointerup',dragUp);root.addEventListener('pointercancel',dragCancel);root.addEventListener('lostpointercapture',dragCancel);root.addEventListener('wheel',wheel,{passive:false});root.addEventListener('dragstart',preventDrag)}
   root.addEventListener('click', click);
   root.addEventListener('keydown', keys);
   root.addEventListener('touchstart', begin, {passive:true});
@@ -115,5 +127,5 @@ export function initGallery(root: HTMLElement) {
   if(typeof IntersectionObserver!=='undefined'){visible=false;observer=new IntersectionObserver(entries=>{visible=entries[0]?.isIntersecting||false;if(!visible)stopAuto();else if(automatic)startAuto()},{threshold:.1});observer.observe(root)}
   doc?.addEventListener('visibilitychange',visibility);scene?.addEventListener('presentation-leave',leave);scene?.addEventListener('presentation-reset',reset);
   show(0,false);if(automatic)startAuto();
-  return () => { stopAuto();observer?.disconnect();doc?.removeEventListener('visibilitychange',visibility);scene?.removeEventListener('presentation-leave',leave);scene?.removeEventListener('presentation-reset',reset);root.removeEventListener('dblclick',toggleVideo,true);root.removeEventListener('pointerdown',videoDown);root.removeEventListener('pointerup',videoUp);root.removeEventListener('pointercancel',videoCancel);pause();enlargedVideo?.pause();dialog.close();dialog.removeEventListener('close',closeVideo);dialog.removeEventListener('cancel',closeVideo);root.removeEventListener('play',onPlay,true);root.removeEventListener('error',onError,true);root.removeEventListener('click', click); root.removeEventListener('keydown', keys); root.removeEventListener('touchstart', begin); root.removeEventListener('touchmove', move); root.removeEventListener('touchend', end); root.removeEventListener('touchcancel', cancel); };
+  return () => { stopAuto();observer?.disconnect();dragCancel();root.removeEventListener('pointerdown',dragDown);root.removeEventListener('pointermove',dragMove);root.removeEventListener('pointerup',dragUp);root.removeEventListener('pointercancel',dragCancel);root.removeEventListener('lostpointercapture',dragCancel);root.removeEventListener('wheel',wheel);root.removeEventListener('dragstart',preventDrag);doc?.removeEventListener('visibilitychange',visibility);scene?.removeEventListener('presentation-leave',leave);scene?.removeEventListener('presentation-reset',reset);root.removeEventListener('dblclick',toggleVideo,true);root.removeEventListener('pointerdown',videoDown);root.removeEventListener('pointerup',videoUp);root.removeEventListener('pointercancel',videoCancel);pause();enlargedVideo?.pause();dialog.close();dialog.removeEventListener('close',closeVideo);dialog.removeEventListener('cancel',closeVideo);root.removeEventListener('play',onPlay,true);root.removeEventListener('error',onError,true);root.removeEventListener('click', click); root.removeEventListener('keydown', keys); root.removeEventListener('touchstart', begin); root.removeEventListener('touchmove', move); root.removeEventListener('touchend', end); root.removeEventListener('touchcancel', cancel); };
 }

@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {defaultComposition,presentation,withMedia,mediaUrls} from '../lib/composition.ts';
+import {defaultComposition,presentation,withMedia,mediaUrls,validComposition} from '../lib/composition.ts';
 import {initial,validSlide} from '../lib/deck.ts';
 import {proposalFrom} from '../lib/codex.mjs';
 const slide=()=>structuredClone(initial.slides[0]);
@@ -21,4 +21,9 @@ test('composition survives Codex proposals; invalid presets cannot enter workspa
 test('visual references only attach scoped local static images, never videos or external URLs',async()=>{
  const {mkdtempSync,rmSync}=await import('node:fs'),os=await import('node:os'),path=await import('node:path');const {saveMedia}=await import('../lib/transfer.mjs');const {gif}=await import('./fixtures.mjs');const {visualReferences}=await import('../lib/codex.mjs');
  const dir=mkdtempSync(path.join(os.tmpdir(),'references-'));try{const u=saveMedia(path.join(dir,'media'),gif);const snap={data:{slides:[{...slide(),id:'A',media:u,gallery:['https://example.com/image.png','/media/missing.jpg']},{...slide(),id:'B',media:'/media/other.png'}]}};const r=visualReferences(snap,'A',dir);assert.equal(r.attached.length,0);assert.equal(r.unavailable.length,3);assert.ok(r.unavailable.every(x=>x.slideId==='A'));}finally{rmSync(dir,{recursive:true,force:true})}
+});
+
+test('custom playback seconds survive validation, while invalid intervals cannot be saved',()=>{
+ for(const autoplaySeconds of [1,2.5,3,4,6,8,3600])assert.ok(validComposition({...defaultComposition,autoplaySeconds}));
+ for(const autoplaySeconds of [0,-1,Infinity,NaN,3601,'3'])assert.equal(validComposition({...defaultComposition,autoplaySeconds}),false);
 });
