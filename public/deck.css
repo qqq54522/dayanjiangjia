@@ -430,6 +430,9 @@
 .semantic-chart-track{height:2.8cqw;background:#edf1f4;border-radius:.4cqw;overflow:hidden}.semantic-chart-track i{display:block;height:100%;background:#1eb2ff;border-right:.5cqw solid #ffd526}
 
 .semantic-chart-track{background:linear-gradient(90deg,#edf1f4 49.7%,#9096a1 49.7% 50.3%,#edf1f4 50.3%);position:relative}.semantic-chart-track:after{content:'0';position:absolute;left:50%;top:100%;font-size:1cqw}.content-layout-list .content-item{justify-content:normal!important;text-align:left!important}
+.scene.semantic-scene .semantic-chart-row h2{font-size:3cqw;line-height:1.25;margin:0}
+.scene.content-process.content-layout-chart .semantic-chart-track{background:#edf1f4}
+.scene.content-process.content-layout-chart .semantic-chart-track:after{content:none}
 
 /* Current content layout. */
 .scene.master-v12.semantic-scene:not(.comic-chapter) .comic-title{height:24%;font-size:3.8cqw;line-height:1.25}
