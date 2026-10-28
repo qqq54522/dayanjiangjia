@@ -41,6 +41,12 @@ test('structured list, spotlight and chart variants render distinctly without lo
  const render=id=>renderToStaticMarkup(React.createElement(Scene,{s:applyVariant(source,id)}));
  assert.ok(render('list').includes('content-layout-list'));assert.ok(renderToStaticMarkup(React.createElement(Scene,{s:{...source,content:{...source.content,presentation:{layout:'spotlight'}}}})).includes('content-layout-spotlight'));
  const chart=render('chart');assert.ok(chart.includes('semantic-chart-track'));assert.ok(chart.includes('66'));assert.ok(chart.includes('-44'));assert.ok(!chart.includes('NaN'));
+ const stages={...source,content:{kind:'process',goal:'按顺序说明',summary:'',presentation:{layout:'chart'},items:['起点','探索','解决','结果'].map((title,i)=>({id:String(i),title,body:'',detail:''}))}};
+ const progression=renderToStaticMarkup(React.createElement(Scene,{s:stages}));
+ assert.match(progression,/content-process content-layout-chart/);
+ assert.match(progression,/width:25%;margin-left:0%/);
+ assert.match(progression,/width:100%;margin-left:0%/);
+ assert.ok(!progression.includes('>—</strong>'));
  }finally{await vite.close()}
 });
 
