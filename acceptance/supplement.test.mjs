@@ -27,10 +27,18 @@ const fs=require('fs');let text='';process.stdin.on('data',b=>text+=b);process.s
   await api('/api/references/'+draft.id+'/generate-all','POST',{groupIds});let generated=await wait('/api/references/'+draft.id,d=>d.groups[0].state!=='running');assert.equal(generated.groups[0].state,'review');
   await api('/api/references/'+draft.id+'/revise','POST',{groupId:groupIds[0],request:'保留现有结果，收窄素材框，给文字更多空间。',renderIssues:['正文边界需调整']});
   generated=await wait('/api/references/'+draft.id,d=>d.groups[0].state!=='running');assert.equal(generated.groups[0].state,'review');assert.equal(generated.groups[0].revisionHistory.length,1);
+  assert.equal(generated.groups[0].previewHistory.length,2);const [firstResult,secondResult]=generated.groups[0].previewHistory;
+  const staleRestore=await fetch(base+'/api/references/'+draft.id+'/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({groupId:groupIds[0],previewId:firstResult.id,expectedPreviewId:firstResult.id})});assert.equal(staleRestore.status,400);
+  generated=await api('/api/references/'+draft.id+'/restore','POST',{groupId:groupIds[0],previewId:firstResult.id,expectedPreviewId:secondResult.id});
+  assert.deepEqual(generated.groups[0].slides,firstResult.slides);assert.equal(generated.groups[0].state,'review');assert.equal(generated.groups[0].previewHistory.length,2);
+  assert.deepEqual((await api('/api/projects/'+a.id+'/workspace')),snapshot);
   await api('/api/references/'+draft.id,'PATCH',{groupId:groupIds[0],decision:'accepted',previewIds:generated.groups[0].slides.map(s=>s.id)});
   const input={projectId:a.id,revision:snapshot.revision,groupIds,placement:{afterId:old[0].id,chapterId:'topic'}};
   const wrong=await fetch(base+'/api/supplements/'+draft.id+'/review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...input,projectId:b.id})});assert.equal(wrong.status,400);
   await api('/api/supplements/'+draft.id+'/review','POST',input);let reviewed=await wait('/api/supplements/'+draft.id,j=>j.state!=='running');assert.equal(reviewed.state,'completed');
+  generated=await api('/api/references/'+draft.id+'/restore','POST',{groupId:groupIds[0],previewId:secondResult.id,expectedPreviewId:firstResult.id});
+  const oldReview=await fetch(base+'/api/supplements/'+draft.id+'/insert',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({projectId:a.id,revision:input.revision,jobId:reviewed.id})});assert.equal(oldReview.status,409);
+  await api('/api/references/'+draft.id,'PATCH',{groupId:groupIds[0],decision:'accepted',previewIds:generated.groups[0].slides.map(s=>s.id)});
   const concurrent={...snapshot.data,title:'期间改了标题'};await api('/api/projects/'+a.id+'/workspace','PUT',{data:concurrent,revision:snapshot.revision});
   const stale=await fetch(base+'/api/supplements/'+draft.id+'/insert',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({projectId:a.id,revision:input.revision,jobId:reviewed.id})});assert.equal(stale.status,409);
   snapshot=await api('/api/projects/'+a.id+'/workspace');await api('/api/supplements/'+draft.id+'/review','POST',{...input,revision:snapshot.revision});reviewed=await wait('/api/supplements/'+draft.id,j=>j.state!=='running');

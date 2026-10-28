@@ -7,8 +7,9 @@ import {confirmedSupplementGroups,supplementPreviewStatus} from '../lib/suppleme
 import {Scene} from './Scene';
 import {RenderReview} from './RenderReview';
 import {TaskProgress,type ProgressTask} from './TaskProgress';
+import {SupplementHistory,type PreviewResult,type SourcePreview} from './SupplementHistory';
 
-type Group=ProgressTask&{id:string;pages:number[];state:string;request:string;slides?:Slide[];error?:string;reason?:string;questions?:string[];revisionHistory?:{request:string;summary:string}[]};
+type Group=ProgressTask&{id:string;pages:number[];state:string;request:string;slides?:Slide[];error?:string;reason?:string;questions?:string[];revisionHistory?:{request:string;summary:string}[];previewHistory?:PreviewResult[];activePreviewId?:string};
 type Draft={id:string;name:string;state:string;progress?:string;error?:string;pages:{number:number;preview:string}[];groups:Group[];warnings:string[];supplement?:{projectId:string;placement?:Placement}};
 type Review={id:string;projectId:string;revision:number;state:string;placement:Placement;groupIds:string[];summary:string;findings:{severity:'notice'|'conflict';message:string}[];error?:string};
 type Inserted={id:string;data:Workspace;revision:number;insertedIds:string[]};
@@ -20,7 +21,8 @@ export default function SupplementPages({projectId,doc,revision,onInserted}:{pro
  const [draft,setDraft]=useState<Draft|null>(null),[checked,setChecked]=useState<string[]>([]),[step,setStep]=useState(0),[request,setRequest]=useState(''),[allowSplit,setAllowSplit]=useState(false);
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[review,setReview]=useState<Review|null>(null),[acknowledge,setAcknowledge]=useState(false),[afterId,setAfterId]=useState<string|null|undefined>(),[chapterId,setChapterId]=useState<string|null>(null);
  const [followups,setFollowups]=useState<Record<string,string>>({}),[insertionIds,setInsertionIds]=useState<string[]>([]);
- const [issues,setIssues]=useState<Record<string,string[]>>({}),[large,setLarge]=useState<Slide|null>(null),[history,setHistory]=useState<{id:string;name:string;state:string}[]>([]);
+ const [issues,setIssues]=useState<Record<string,string[]>>({}),[large,setLarge]=useState<Slide|{url:string;label:string}|null>(null),[history,setHistory]=useState<{id:string;name:string;state:string}[]>([]);
+ const [viewing,setViewing]=useState<Record<string,string>>({});
  const uploadInput=useRef<HTMLInputElement>(null),alive=useRef(true);
  const insertedIds=new Set(doc.slides.map(s=>s.id));
  const groups=draft?.groups.filter(g=>checked.includes(g.id)&&!g.slides?.every(s=>insertedIds.has(s.id)))||[];
@@ -47,12 +49,16 @@ export default function SupplementPages({projectId,doc,revision,onInserted}:{pro
  useEffect(()=>{if(!draft||!checking)return;let live=true;const timer=setInterval(()=>{void api('/api/supplements/'+draft.id).then(r=>{if(live)setReview(r)}).catch(e=>{if(live)setError(e.message)})},1500);return()=>{live=false;clearInterval(timer)}},[draft?.id,checking]);
  useEffect(()=>{if(draft?.state==='ready'&&draft.groups.length===1&&!checked.length)setChecked([draft.groups[0].id])},[draft?.id,draft?.state]);
  async function upload(file:File){if(working)return;await perform(async()=>{if(!/\.pptx$/i.test(file.name))throw Error('请选择 PPTX 文件；单页或多页均可。');const r=await fetch('/api/references?purpose=supplement&project='+encodeURIComponent(projectId)+'&name='+encodeURIComponent(file.name),{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:file});const d=await r.json();if(!r.ok)throw Error(d.error);setDraft(d);setChecked([]);setInsertionIds([]);setReview(null);setStep(0);setIssues({});setAfterId(undefined);setAcknowledge(false)})}
- async function generate(target?:Group){if(!draft)return;if(target?.slides?.length){await perform(async()=>{setReview(null);setDraft(await api('/api/references/'+draft.id+'/revise','POST',{groupId:target.id,request:followups[target.id]?.trim()||target.request||'保留当前结果，完成上次未成功的调整。',renderIssues:(target.slides||[]).flatMap(s=>issues[s.id]||[]).slice(0,30),allowPageCountChange:allowSplit}))});return;}await perform(async()=>{const chosen=(target?[target]:groups).filter(g=>!g.slides?.length);for(const g of chosen)await api('/api/references/'+draft.id,'PATCH',{groupId:g.id,request,keepOne:!allowSplit,allowPageCountChange:allowSplit});setReview(null);setAcknowledge(false);setStep(1);
+ async function generate(target?:Group){if(!draft)return;if(target?.slides?.length){await perform(async()=>{setViewing(old=>({...old,[target.id]:''}));setReview(null);setDraft(await api('/api/references/'+draft.id+'/revise','POST',{groupId:target.id,request:followups[target.id]?.trim()||target.request||'保留当前结果，完成上次未成功的调整。',renderIssues:(target.slides||[]).flatMap(s=>issues[s.id]||[]).slice(0,30),allowPageCountChange:allowSplit}))});return;}await perform(async()=>{const chosen=(target?[target]:groups).filter(g=>!g.slides?.length);for(const g of chosen)await api('/api/references/'+draft.id,'PATCH',{groupId:g.id,request,keepOne:!allowSplit,allowPageCountChange:allowSplit});setReview(null);setAcknowledge(false);setStep(1);
   setDraft(await api('/api/references/'+draft.id+(target?'/generate':'/generate-all'),'POST',target?{groupId:target.id}:{groupIds:groups.map(g=>g.id)}));
  })}
  async function revise(target:Group,repair=false){if(!draft)return;const message=followups[target.id]?.trim()|| (repair?'保留当前预览中未提到的内容和素材，修复检查发现的越界；优先重新分配图文区域与留白，保持正常字号。':'');if(!message)return;await perform(async()=>{
   const renderIssues=(target.slides||[]).flatMap(s=>issues[s.id]||[]).slice(0,30);
-  setReview(null);setAcknowledge(false);setDraft(await api('/api/references/'+draft.id+'/revise','POST',{groupId:target.id,request:message,renderIssues,allowPageCountChange:allowSplit}));
+  setViewing(old=>({...old,[target.id]:''}));setReview(null);setAcknowledge(false);setDraft(await api('/api/references/'+draft.id+'/revise','POST',{groupId:target.id,request:message,renderIssues,allowPageCountChange:allowSplit}));
+ })}
+ async function restoreResult(target:Group,previewId:string){if(!draft)return;await perform(async()=>{
+  const d=await api('/api/references/'+draft.id+'/restore','POST',{groupId:target.id,previewId,expectedPreviewId:target.activePreviewId});
+  setDraft(d);setViewing(old=>({...old,[target.id]:''}));setReview(null);setAcknowledge(false);setFollowups(old=>({...old,[target.id]:''}));
  })}
  async function confirmGroup(target:Group){if(!draft||supplementPreviewStatus(target,issues,insertedIds).state!=='ready')return;await perform(async()=>{setDraft(await api('/api/references/'+draft.id,'PATCH',{groupId:target.id,decision:'accepted',previewIds:target.slides!.map(s=>s.id)}));setReview(null)})}
  function choosePosition(id:string|null){setAfterId(id);setChapterId(placementChapter(doc.slides,id)?.id||null);setAcknowledge(false)}
@@ -80,12 +86,11 @@ export default function SupplementPages({projectId,doc,revision,onInserted}:{pro
    <label className="field">首次补页要求（可选）<textarea rows={3} value={request} maxLength={10000} onChange={e=>setRequest(e.target.value)} placeholder="例如：补充课程范围，用原图作证据，沿用现有稿件风格。" disabled={working||busy}/></label>
    <label className="supplement-option"><input type="checkbox" checked={allowSplit} disabled={working||busy} onChange={e=>setAllowSplit(e.target.checked)}/><span>允许内容较多的原页拆成多页（默认每个原页生成一页）</span></label>
    <div className="supplement-actions"><button disabled={busy||working} onClick={()=>setStep(0)}><ArrowLeft size={16}/>重新选页</button><button className="primary" disabled={!groups.length||busy||working||groups.every(g=>['review','accepted'].includes(g.state))} onClick={()=>void generate()}><Layers size={16}/>生成未完成页面</button></div>
-   {groups.map(g=>{const status=supplementPreviewStatus(g,issues,insertedIds);return <section className="supplement-result" key={g.id}>
+   {groups.map(g=>{const status=supplementPreviewStatus(g,issues,insertedIds),selected=viewing[g.id]||g.activePreviewId,browsing=!!selected&&selected!==g.activePreviewId;return <section className="supplement-result" key={g.id}>
     <header><h3>原稿第 {g.pages.join('、')} 页</h3>{g.state==='failed'&&<button disabled={busy||working} onClick={()=>void generate(g)}><RefreshCw size={15}/>重试这一组</button>}</header>
     {g.error&&<p className="error" role="alert">{g.error}</p>}{!g.slides?.length&&!generating&&<p>生成后在这里预览。</p>}
-    {g.slides?.map(s=><div className="supplement-preview" key={s.id}><Scene s={s} interactive={false}/><button onClick={()=>setLarge(s)}>放大检查排版</button></div>)}
-    {g.reason&&<p>{g.reason}</p>}{g.questions?.map((q,i)=><p key={i}>待核对：{q}</p>)}
-    {!!g.slides?.length&&<>
+    {!!g.previewHistory?.length&&<SupplementHistory results={g.previewHistory} currentId={g.activePreviewId} selectedId={selected} sources={draft.pages.filter(p=>g.pages.includes(p.number))} busy={busy||!!working} onSelect={id=>setViewing(old=>({...old,[g.id]:id}))} onRestore={id=>void restoreResult(g,id)} onLarge={setLarge} onSourceLarge={(p:SourcePreview)=>setLarge({url:p.preview,label:'原稿第 '+p.number+' 页'})}/>}
+    {!!g.slides?.length&&!browsing&&<>
      <div className={'supplement-group-status '+status.state} role="status"><b>{status.state==='confirmed'?'✓ 已确认这一组':status.state==='ready'?'排版检查通过，请确认这一组':status.state==='blocked'?'需要调整后再确认':status.state==='checking'?'正在检查排版':'当前预览待处理'}</b>{status.messages.map((message,i)=><p key={i}>{message}</p>)}</div>
      <div className="supplement-followup"><label className="field">在当前结果上继续修改<textarea aria-label={'修改原稿第 '+g.pages.join('、')+' 页的生成结果'} rows={3} value={followups[g.id]||''} maxLength={10000} disabled={busy||working} onChange={e=>setFollowups(old=>({...old,[g.id]:e.target.value}))} placeholder="例如：整体保留，把视频右侧的空白收小，让文字区域宽一些，文字和视频都保留。"/></label><p className="source">会同时参考原稿素材、当前生成结果、最近的调整要求和排版检查，只修改这一组。</p><div className="supplement-actions"><button disabled={busy||working||!followups[g.id]?.trim()} onClick={()=>void revise(g)}><RefreshCw size={15}/>按这段话修改这一组</button>{status.state==='blocked'&&<button disabled={busy||working} onClick={()=>void revise(g,true)}>修复本组排版问题</button>}</div></div>
      {!!g.revisionHistory?.length&&<details className="supplement-turns"><summary>最近的调整记录</summary>{g.revisionHistory.map((turn,i)=><div key={i}><p>{turn.request||'首次生成'}</p><small>{turn.summary}</small></div>)}</details>}
@@ -113,6 +118,6 @@ export default function SupplementPages({projectId,doc,revision,onInserted}:{pro
   {step>0&&<div className="review-background-checks" aria-hidden="true">{(step===2?previewPages:pages).map(s=><div key={s.id}><RenderReview slide={s} interactive={false} onIssues={recordIssues}/></div>)}</div>}
   {step===2&&pages.some(s=>issues[s.id]?.length)&&<div className="error" role="alert">{pages.flatMap(s=>(issues[s.id]||[]).map((message,i)=><p key={s.id+i}>{message}</p>))}<p>请返回补页预览，调整后重新检查。</p></div>}
   {!!draft?.warnings?.length&&<details><summary>原稿解析提示（{draft.warnings.length}）</summary>{draft.warnings.map((w,i)=><p key={i}>{w}</p>)}</details>}
-  {large&&<div className="overlay supplement-large" onClick={()=>setLarge(null)}><section className="dialog large" role="dialog" aria-modal="true" aria-label="补页放大预览" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setLarge(null)}>关闭预览</button><Scene s={large}/></section></div>}
+  {large&&<div className="overlay supplement-large" onClick={()=>setLarge(null)}><section className="dialog large" role="dialog" aria-modal="true" aria-label="补页放大预览" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setLarge(null)}>关闭预览</button>{'url' in large?<img className="supplement-original-large" src={large.url} alt={large.label}/>:<Scene s={large}/>}</section></div>}
  </div>;
 }
