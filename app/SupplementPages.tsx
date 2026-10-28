@@ -95,7 +95,7 @@ export default function SupplementPages({projectId,doc,revision,onInserted}:{pro
    <div className="supplement-continue"><p>已确认 {confirmed.length} / {groups.length} 组。{confirmed.length<groups.length?'可以先插入已确认的部分，其他组保留供继续修改。':''}</p><button className="primary wide" disabled={!confirmed.length||busy||working} onClick={()=>{setInsertionIds(confirmed.map(g=>g.id));setStep(2)}}>选择插入位置（已确认 {confirmed.length} 组） <ArrowRight size={16}/></button>{!confirmed.length&&<p className="source">请在满意且排版检查通过的预览下点击「确认这一组」。</p>}</div>
   </>}
   {step===2&&draft&&<>
-   {review?.state==='inserted'?<div><p role="status">这一批补页已插入当前稿件。</p><button onClick={()=>{setReview(null);setInsertionIds([]);setStep(1)}}>继续处理其他补页</button></div>:<>
+   {review?.state==='inserted'?<div><p role="status">这一批补页已插入当前稿件。</p><button onClick={()=>{setReview(null);setInsertionIds([]);setChecked([]);setStep(0)}}>继续选择其他补页</button></div>:<>
     <button disabled={busy||working} onClick={()=>setStep(1)}><ArrowLeft size={16}/>返回补页预览</button>
     <h3>选择插入位置</h3><div className="supplement-position-list" aria-label="插入位置"><button aria-pressed={afterId===null} disabled={busy||working} onClick={()=>choosePosition(null)}><Plus size={16}/>放在稿件开头</button>{doc.slides.map((s,i)=><button key={s.id} aria-pressed={afterId===s.id} disabled={busy||working} onClick={()=>choosePosition(s.id)}><div className="supplement-position-thumb">{showPage(s)}</div><span>插在第 {i+1} 页后<br/>{s.title||'未命名页面'}</span></button>)}</div>
     {placement&&!positionValid&&<p className="error">原插入位置已删除，请重新选择。</p>}
