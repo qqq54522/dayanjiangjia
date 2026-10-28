@@ -1,3 +1,4 @@
+import {MAX_SLIDES} from '../lib/limits.ts';
 import test from'node:test';import assert from'node:assert/strict';import React from'react';import{renderToStaticMarkup}from'react-dom/server';import{createServer}from'vite';import{initial}from'../lib/deck.ts';
 test('rendered presentation respects explicit visibility, meaningful interactions and classic opening',async()=>{
  const vite=await createServer({server:{middlewareMode:true,hmr:false,watch:null},appType:'custom'});
@@ -29,7 +30,7 @@ test('style gallery renders every classic and semantic example and enforces actu
  const vite=await createServer({server:{middlewareMode:true,hmr:false,watch:null},appType:'custom'});
  try{const{default:StyleSamples}=await vite.ssrLoadModule('/app/StyleSamples.tsx');const{styleExamples,styleExampleInfo}=await vite.ssrLoadModule('/lib/templates.ts');const source=initial.slides.slice(0,1),examples=styleExamples(source),count=examples.length;
  const render=n=>renderToStaticMarkup(React.createElement(StyleSamples,{slides:Array.from({length:n},(_,i)=>({...source[0],id:String(i)})),onAdd:()=>{throw Error('Rendering must not alter the manuscript')}}));
- const html=render(1);assert.equal((html.match(/class="sample-category"/g)||[]).length,8);assert.equal((html.match(/class="sample-example"/g)||[]).length,count);for(const s of examples)assert.ok(html.includes(styleExampleInfo(s).label));assert.ok(html.includes(`添加全部 ${count} 页示例`));assert.ok(html.includes('章节开场'));assert.ok(html.includes('简明表格'));assert.ok(!render(60-count).includes('disabled=""'));assert.ok(render(61-count).includes('disabled=""'));assert.ok(render(61-count).includes('超过 60 页上限'));
+ const html=render(1);assert.equal((html.match(/class="sample-category"/g)||[]).length,8);assert.equal((html.match(/class="sample-example"/g)||[]).length,count);for(const s of examples)assert.ok(html.includes(styleExampleInfo(s).label));assert.ok(html.includes(`添加全部 ${count} 页示例`));assert.ok(html.includes('章节开场'));assert.ok(html.includes('简明表格'));assert.ok(!render(MAX_SLIDES-count).includes('disabled=""'));assert.ok(render(MAX_SLIDES+1-count).includes('disabled=""'));assert.ok(render(MAX_SLIDES+1-count).includes(`超过 ${MAX_SLIDES} 页上限`));
  }finally{await vite.close()}
 });
 

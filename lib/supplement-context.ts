@@ -1,3 +1,4 @@
+import {MAX_SLIDES} from './limits.ts';
 import {validSlide,type Slide,type Workspace} from './deck.ts';
 
 export type Placement={afterId:string|null;chapterId:string|null};
@@ -32,7 +33,7 @@ export function supplementContext(snapshot:SupplementSnapshot,placement?:Placeme
 /** Existing pages and saved versions survive byte-for-byte; only new stable IDs are inserted. */
 export function insertSupplement(doc:Workspace,pages:Slide[],placement:Placement):Workspace{
  const index=insertionIndex(doc.slides,placement.afterId);
- if(!pages.length||doc.slides.length+pages.length>60)throw Error('插入后最多支持 60 页，请减少本次补页数量。');
+ if(!pages.length||doc.slides.length+pages.length>MAX_SLIDES)throw Error(`插入后最多支持 ${MAX_SLIDES} 页，请减少本次补页数量。`);
  if(!pages.every(validSlide)||new Set(pages.map(s=>s.id)).size!==pages.length||pages.some(s=>doc.slides.some(old=>old.id===s.id)))throw Error('补页结果无效或已经插入，请重新检查。');
  const chapter=doc.slides.find(s=>s.chapter?.id===placement.chapterId)?.chapter;
  if(placement.chapterId&&!chapter)throw Error('所选章节已变化，请重新检查。');

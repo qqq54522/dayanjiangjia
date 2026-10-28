@@ -1,9 +1,25 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {spawn} from 'node:child_process';import {mkdtempSync,mkdirSync,writeFileSync,rmSync,statSync} from 'node:fs';import {tmpdir} from 'node:os';import path from 'node:path';import net from 'node:net';import {once} from 'node:events';
 import {mp4,gif} from '../tests/fixtures.mjs';import {FONTS} from '../lib/fonts.mjs';import {unzipSync} from 'fflate';
+import {initial} from '../lib/deck.ts';import {MAX_SLIDES,MAX_WORKSPACE_BYTES} from '../lib/limits.ts';
 async function start(){const dir=mkdtempSync(path.join(tmpdir(),'deck-http-'));mkdirSync(path.join(dir,'fonts'));for(const f of FONTS)writeFileSync(path.join(dir,'fonts',f.name),Buffer.from([0,1,0,0,0,0,0,0]));
  const socket=net.createServer();socket.listen(0,'127.0.0.1');await once(socket,'listening');const port=socket.address().port;await new Promise(r=>socket.close(r));
  const proc=spawn(process.execPath,['server.mjs'],{env:{...process.env,PORT:String(port),DECK_DATA_DIR:dir},stdio:['ignore','pipe','pipe']});let output='';proc.stderr.on('data',x=>output+=x);await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('server start timeout '+output)),10000);proc.stdout.once('data',()=>{clearTimeout(timer);resolve()});proc.once('exit',()=>{clearTimeout(timer);reject(Error(output))})});
  return {base:'http://127.0.0.1:'+port,dir,async stop(){const ended=once(proc,'exit');proc.kill();await ended;rmSync(dir,{recursive:true,force:true})}}}
+test('100-page drafts and versions above 10 MiB save over both workspace endpoints without losing pages',async()=>{
+ const a=await start();try{
+  const project=await (await fetch(a.base+'/api/projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:'100-page isolated test'})})).json();
+  const snapshot=await (await fetch(a.base+'/api/projects/'+project.id+'/open',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})).json();
+  const make=i=>({...structuredClone(initial.slides[0]),id:'capacity-'+i,title:'Page '+(i+1),media:'',gallery:[],content:{kind:'point',goal:'',summary:'',items:Array.from({length:8},(_,j)=>({id:'detail-'+j,title:'',body:'',detail:'x'.repeat(14000),placement:'detail'}))}});
+  const data={...snapshot.data,slides:Array.from({length:100},(_,i)=>make(i))};
+  const save=async(url,revision)=>{const body=JSON.stringify({data,revision});assert.ok(Buffer.byteLength(body)>10*1024*1024);assert.ok(Buffer.byteLength(body)<MAX_WORKSPACE_BYTES);const r=await fetch(a.base+url,{method:'PUT',headers:{'Content-Type':'application/json'},body});assert.equal(r.status,200,await r.text())};
+  await save('/api/projects/'+project.id+'/workspace',0);
+  data.versions=[{id:'large-fixed',name:'100-page fixed version',time:new Date().toISOString(),slides:structuredClone(data.slides),comments:[]}];await save('/api/workspace',1);
+  const saved=await (await fetch(a.base+'/api/projects/'+project.id+'/workspace')).json();assert.equal(saved.data.slides.length,100);assert.equal(saved.data.slides[99].title,'Page 100');assert.equal(saved.data.versions[0].slides.length,100);
+  const proposed=data.slides.map(s=>({...s,content:{kind:'point',goal:'',summary:'',items:[]}}));const proposal=await fetch(a.base+'/api/proposals',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:2,summary:'isolated proposal',slides:proposed})});assert.equal(proposal.status,200);
+  const invalid={...data,slides:Array.from({length:MAX_SLIDES+1},(_,i)=>({...make(i),content:{kind:'point',goal:'',summary:'',items:[]}})),versions:[]};assert.equal((await fetch(a.base+'/api/projects/'+project.id+'/workspace',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:invalid,revision:3})})).status,400);
+  const summary=(await (await fetch(a.base+'/api/projects')).json()).projects.find(p=>p.id===project.id);assert.equal(summary.revision,3);assert.equal(summary.slideCount,100);assert.equal(summary.versionCount,1);
+ }finally{await a.stop()}
+});
 test('HTTP upload → save → ZIP → second workspace; byte ranges, isolation and stale writes',async()=>{
  const a=await start(),b=await start();
  try{const upload=async(bytes)=>{const r=await fetch(a.base+'/api/media',{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:bytes});assert.equal(r.status,200);return (await r.json()).url};const video=await upload(mp4),image=await upload(gif);

@@ -1,3 +1,4 @@
+import {MAX_WORKSPACE_BYTES} from './lib/limits.ts';
 import {installMasters} from './lib/master-resources.mjs';
 import {DEFAULT_MASTER,masterCatalog} from './lib/masters.ts';
 import http from 'node:http';
@@ -27,7 +28,7 @@ const supplements=createSupplements({dir:dataDir,store,workspace:workspaceView,c
 const updater=createAppUpdater({root,supervised:process.env.DECK_SUPERVISED==='1',onRestart:()=>setTimeout(()=>{codex.close();conversions.close();supplements.close();server.close(()=>{store.close();process.exit(75)})},1000)});
 const send=(res,status,data)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(data))};
 const raw=async(req,limit=Infinity)=>{let size=0;const chunks=[];for await(const b of req){size+=b.length;if(size>limit)throw Object.assign(Error('上传文件超过大小限制'),{status:413});chunks.push(b)}return Buffer.concat(chunks)};
-const body=async req=>JSON.parse((await raw(req,10*1024*1024)).toString());
+const body=async(req,limit=10*1024*1024)=>JSON.parse((await raw(req,limit)).toString());
 const server=http.createServer(async(req,res)=>{try{
  const allowed=new Set([`127.0.0.1:${port}`,`localhost:${port}`]);if(!allowed.has(req.headers.host))return send(res,403,{error:'仅允许本机访问'});
  if(req.headers.origin&&!['http://127.0.0.1:'+port,'http://localhost:'+port].includes(req.headers.origin))return send(res,403,{error:'不接受跨站请求'});
@@ -93,11 +94,11 @@ const server=http.createServer(async(req,res)=>{try{
  if(projectMatch){const [,id,action]=projectMatch;
   if(action==='open'&&req.method==='POST'){store.select(id);return send(res,200,workspaceView(id))}
   if(action==='workspace'&&req.method==='GET')return send(res,200,workspaceView(id));
-  if(action==='workspace'&&req.method==='PUT'){const b=await body(req);return send(res,200,store.save(masters.hydrate(b.data),b.revision,id))}
+  if(action==='workspace'&&req.method==='PUT'){const b=await body(req,MAX_WORKSPACE_BYTES);return send(res,200,store.save(masters.hydrate(b.data),b.revision,id))}
  }
  if(url.pathname==='/api/workspace'&&req.method==='GET')return send(res,200,workspaceView());
- if(url.pathname==='/api/workspace'&&req.method==='PUT'){const b=await body(req);return send(res,200,store.save(masters.hydrate(b.data),b.revision))}
- if(url.pathname==='/api/proposals'&&req.method==='POST')return send(res,200,store.propose(await body(req)));
+ if(url.pathname==='/api/workspace'&&req.method==='PUT'){const b=await body(req,MAX_WORKSPACE_BYTES);return send(res,200,store.save(masters.hydrate(b.data),b.revision))}
+ if(url.pathname==='/api/proposals'&&req.method==='POST')return send(res,200,store.propose(await body(req,MAX_WORKSPACE_BYTES)));
  if(url.pathname==='/api/export'&&req.method==='GET'){let data=workspaceView(url.searchParams.get('project')||undefined).data;const versionId=url.searchParams.get('version');if(versionId!==null){const version=data.versions.find(v=>v.id===versionId);if(!version)return send(res,404,{error:'此演示版本不存在，请刷新版本列表'});data={...data,slides:version.slides,settings:version.settings,comments:version.comments||[],proposals:[],versions:[version]}}const zip=pack(data,mediaDir,fontDir);res.writeHead(200,{'Content-Type':'application/zip','Content-Disposition':'attachment; filename=deck.deck.zip','Cache-Control':'no-store'});return res.end(zip)}
  if(url.pathname==='/api/import'&&req.method==='POST')return send(res,200,{data:masters.hydrate(unpack(await raw(req),mediaDir,fontDir))});
  if(url.pathname==='/api/media'&&req.method==='POST'){return send(res,200,{url:saveMedia(mediaDir,await raw(req))})}
