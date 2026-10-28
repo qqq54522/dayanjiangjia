@@ -11,12 +11,14 @@ export function relationPlan(c:SlideContent):{nodes:RelationNode[];paths:string[
  const {main,result,bridge,premises}=relationParts(c),layout=contentLayout(c),nodes:RelationNode[]=[],paths:string[]=[];
  const put=(item:ContentItem|undefined,role:RelationNode['role'],x:number,y:number,width:number,height:number)=>{if(item)nodes.push({item,role,x,y,width,height})};
  if(layout==='induction'){
-  const hasBridge=!!bridge,rows=premises.length,gap=1.5,w=(100-Math.max(0,rows-1)*gap)/Math.max(1,rows),h=hasBridge?32:44;
+  const hasBridge=!!bridge,simpleInputs=[...premises,...(bridge?[bridge]:[])].every(item=>!item.body?.trim()&&!item.media&&!item.value?.trim());
+  const roomForResult=!!result?.body?.trim()&&simpleInputs,rows=premises.length,gap=1.5,w=(100-Math.max(0,rows-1)*gap)/Math.max(1,rows);
+  const h=roomForResult?(hasBridge?27:35):(hasBridge?32:44),bridgeY=roomForResult?35:47,bridgeHeight=roomForResult?18:24,resultY=roomForResult?(hasBridge?58:52):(hasBridge?80:73);
   premises.forEach((item,i)=>put(item,'premise',i*(w+gap),0,w,h));
   if(rows>1)paths.push(`M${w*5} ${h*5+5} V${h*5+30} H${(100-w/2)*10} V${h*5+5}`);
-  if(rows)paths.push(`M500 ${h*5+5} V${hasBridge?220:345}`);
-  if(hasBridge){put(bridge,'bridge',9,47,82,24);paths.push('M500 360 V390')}
-  put(result,'result',15,hasBridge?80:73,70,hasBridge?20:25);
+  if(rows)paths.push(`M500 ${h*5+5} V${(hasBridge?bridgeY:resultY)*5-15}`);
+  if(hasBridge){put(bridge,'bridge',9,bridgeY,82,bridgeHeight);paths.push(`M500 ${(bridgeY+bridgeHeight)*5+5} V${resultY*5-10}`)}
+  put(result,'result',15,resultY,70,100-resultY);
  }else if(layout==='converge'){
   const inputs=main.filter(i=>i!==result),count=inputs.length,center=c.presentation?.relationMode==='center';
   if(center){
