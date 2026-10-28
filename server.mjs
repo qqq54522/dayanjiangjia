@@ -2,6 +2,7 @@ import {installMasters} from './lib/master-resources.mjs';
 import {DEFAULT_MASTER,masterCatalog} from './lib/masters.ts';
 import http from 'node:http';
 import {createConversions} from './lib/conversion.mjs';
+import {createSupplements} from './lib/supplement.mjs';
 import {readFileSync,existsSync,mkdirSync,statSync,createReadStream} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -21,8 +22,9 @@ const workspaceView=id=>{const v=store.read(id);return {...v,data:masters.hydrat
 const connection=createCliConnection({dir:dataDir});
 const codex=createCodexBridge({dir:dataDir,store,connection});
 const publisher=createPublisher({dir:dataDir});
-const conversions=createConversions({dir:dataDir,connection});
-const updater=createAppUpdater({root,supervised:process.env.DECK_SUPERVISED==='1',onRestart:()=>setTimeout(()=>{codex.close();conversions.close();server.close(()=>{store.close();process.exit(75)})},1000)});
+const conversions=createConversions({dir:dataDir,connection,workspace:workspaceView});
+const supplements=createSupplements({dir:dataDir,store,workspace:workspaceView,conversions,connection});
+const updater=createAppUpdater({root,supervised:process.env.DECK_SUPERVISED==='1',onRestart:()=>setTimeout(()=>{codex.close();conversions.close();supplements.close();server.close(()=>{store.close();process.exit(75)})},1000)});
 const send=(res,status,data)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(data))};
 const raw=async(req,limit=Infinity)=>{let size=0;const chunks=[];for await(const b of req){size+=b.length;if(size>limit)throw Object.assign(Error('上传文件超过大小限制'),{status:413});chunks.push(b)}return Buffer.concat(chunks)};
 const body=async req=>JSON.parse((await raw(req,10*1024*1024)).toString());
@@ -34,7 +36,22 @@ const server=http.createServer(async(req,res)=>{try{
  if(url.pathname==='/api/update'&&req.method==='GET')return send(res,200,await updater.status());
  if(url.pathname==='/api/update'&&req.method==='POST')return send(res,202,await updater.start());
  if(url.pathname==='/api/references'&&req.method==='GET')return send(res,200,conversions.list());
- if(url.pathname==='/api/references'&&req.method==='POST')return send(res,202,conversions.upload(await raw(req),url.searchParams.get('name')||'source',{background:defaultBackground,settings:workspaceView().data.settings}));
+ if(url.pathname==='/api/references'&&req.method==='POST'){
+  const projectId=url.searchParams.get('project')||store.activeId(),snapshot=workspaceView(projectId);
+  const supplement=url.searchParams.get('purpose')==='supplement'?{projectId}:undefined;
+  return send(res,202,conversions.upload(await raw(req),url.searchParams.get('name')||'source',{background:defaultBackground,settings:snapshot.data.settings,supplement}));
+ }
+ const supplementMatch=/^\/api\/supplements\/([a-f0-9-]{36})(?:\/(review|adjust|insert|cancel))?$/.exec(url.pathname);
+ if(supplementMatch){const [,id,action]=supplementMatch;
+  if(req.method==='GET'&&!action)return send(res,200,supplements.read(id));
+  if(req.method!=='POST')return send(res,405,{error:'请使用 POST 提交补页操作'});
+  const input=await body(req);
+  if(action==='review')return send(res,202,supplements.review(id,input,codex.status().settings));
+  if(action==='adjust')return send(res,202,supplements.adjust(id,input,codex.status().settings));
+  if(action==='insert')return send(res,200,supplements.insert(id,input));
+  if(action==='cancel')return send(res,200,supplements.cancel(id));
+  return send(res,404,{error:'补页操作不存在'});
+ }
  const refMatch=/^\/api\/references\/([a-f0-9-]{36})(?:\/(generate|generate-all|retry|version))?$/.exec(url.pathname);
  if(refMatch){const [,id,action]=refMatch;
   if(req.method==='GET')return send(res,200,conversions.read(id));
@@ -102,4 +119,4 @@ const server=http.createServer(async(req,res)=>{try{
  }catch(e){send(res,e.status||400,{error:e.message})}});
 server.on('error',e=>{console.error(e.code==='EADDRINUSE'?`端口 ${port} 已占用，请关闭旧工作台后重试，或指定 PORT。`:e.message);store.close();process.exit(1)});
 server.listen(port,'127.0.0.1',()=>console.log(`洋葱学园演示工作台 http://127.0.0.1:${port}\n文稿保存在 ${dataDir}，不会上传代码仓库。`));
-for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>{codex.close();conversions.close();server.close(()=>{store.close();process.exit(0)})});
+for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>{codex.close();conversions.close();supplements.close();server.close(()=>{store.close();process.exit(0)})});

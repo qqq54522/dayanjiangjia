@@ -8,6 +8,10 @@ export class EditorState{
  private write:(d:Workspace,r:number)=>Promise<number>;private notify:()=>void;
  constructor(data:Workspace,revision:number,write:(d:Workspace,r:number)=>Promise<number>,notify:()=>void){this.data=data;this.revision=revision;this.write=write;this.notify=notify;}
  adopt(data:Workspace,revision:number){this.data=data;this.revision=revision;this.dirty=false;this.error='';this.conflict=false;this.past=[];this.future=[];this.group='';this.notify();}
+ acceptSaved(data:Workspace,revision:number,baseRevision:number){
+  if(this.dirty||this.saving||this.revision!==baseRevision)throw Error('当前稿件已变化，补页已经保存到本机，请刷新后查看。');
+  this.change(data);this.revision=revision;this.dirty=false;this.error='';this.notify();
+ }
  change(data:Workspace,group=''){
  if(equal(data,this.data))return;
  if(!equal(draft(data),draft(this.data))){if(!group||group!==this.group||Date.now()-this.time>900){this.past.push(structuredClone(draft(this.data)));if(this.past.length>60)this.past.shift();}this.future=[];}
