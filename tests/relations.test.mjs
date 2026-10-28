@@ -30,6 +30,19 @@ test('relationship roles follow stable IDs after reordering; hidden details neve
  c.presentation.bridgeId=null;assert.equal(relationParts(c).bridge,undefined);assert.equal(relationPlan(c).nodes.length,6);
  c.items=c.items.filter(i=>i.id!=='item-1');parts=relationParts(c);assert.ok(parts.result);assert.ok(parts.main.some(i=>i.id===parts.result.id));
 });
+
+test('induction gives a result with explanatory text enough vertical room',()=>{
+ const c=applyVariant(source(),'induction').content;
+ const inputs=relationParts(c);for(const item of [...inputs.premises,...(inputs.bridge?[inputs.bridge]:[])]){item.body='';item.media=undefined;item.value=undefined}
+ c.items.at(-1).body='为什么存在？\n能解决什么？\n什么时候使用？';
+ const plan=relationPlan(c),result=plan.nodes.find(n=>n.role==='result'),bridge=plan.nodes.find(n=>n.role==='bridge');
+ assert.ok(result.height>=40);
+ assert.ok(bridge.y+bridge.height<result.y);
+ assert.equal(result.y+result.height,100);
+ assert.ok(plan.paths.at(-1).includes(`V${result.y*5-10}`));
+ inputs.premises[0].body='需要完整展示的前提说明';
+ assert.equal(relationPlan(c).nodes.find(n=>n.role==='result').height,20);
+});
 test('confirmed six-node loop keeps the original geometry, four arcs and all six connections',()=>{
  const p=relationPlan(applyVariant(source(),'cycle').content);assert.equal(p.nodes.length,6);assert.equal(p.paths.length,6);assert.equal(p.paths.filter(d=>d.includes('Q')).length,4);assert.ok(!p.paths.some(d=>d.includes('C')));
  for(const n of p.nodes){assert.ok(n.x>=0&&n.y>=0);assert.ok(n.x+n.width<=100&&n.y+n.height<=100)}
