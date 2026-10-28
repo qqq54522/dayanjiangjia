@@ -24,7 +24,10 @@ const fs=require('fs');let text='';process.stdin.on('data',b=>text+=b);process.s
   const doc={...snapshot.data,slides:old,versions:[{id:'fixed',name:'已保存',time:new Date().toISOString(),slides:structuredClone(old)}]};await api('/api/projects/'+a.id+'/workspace','PUT',{data:doc,revision:snapshot.revision});snapshot=await api('/api/projects/'+a.id+'/workspace');
   const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a9xkAAAAASUVORK5CYII=','base64');
   const uploaded=await fetch(base+'/api/references?purpose=supplement&project='+a.id+'&name=new.png',{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:png});assert.equal(uploaded.status,202);const draft=await uploaded.json(),groupIds=[draft.groups[0].id];
-  await api('/api/references/'+draft.id+'/generate-all','POST',{groupIds});const generated=await wait('/api/references/'+draft.id,d=>d.groups[0].state!=='running');assert.equal(generated.groups[0].state,'review');
+  await api('/api/references/'+draft.id+'/generate-all','POST',{groupIds});let generated=await wait('/api/references/'+draft.id,d=>d.groups[0].state!=='running');assert.equal(generated.groups[0].state,'review');
+  await api('/api/references/'+draft.id+'/revise','POST',{groupId:groupIds[0],request:'保留现有结果，收窄素材框，给文字更多空间。',renderIssues:['正文边界需调整']});
+  generated=await wait('/api/references/'+draft.id,d=>d.groups[0].state!=='running');assert.equal(generated.groups[0].state,'review');assert.equal(generated.groups[0].revisionHistory.length,1);
+  await api('/api/references/'+draft.id,'PATCH',{groupId:groupIds[0],decision:'accepted',previewIds:generated.groups[0].slides.map(s=>s.id)});
   const input={projectId:a.id,revision:snapshot.revision,groupIds,placement:{afterId:old[0].id,chapterId:'topic'}};
   const wrong=await fetch(base+'/api/supplements/'+draft.id+'/review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...input,projectId:b.id})});assert.equal(wrong.status,400);
   await api('/api/supplements/'+draft.id+'/review','POST',input);let reviewed=await wait('/api/supplements/'+draft.id,j=>j.state!=='running');assert.equal(reviewed.state,'completed');

@@ -59,3 +59,10 @@ test('editor separates on-screen content from reference material and preserves o
   s.content.presentation.evidence=true;const visible=render();assert.ok(visible.includes('evidence-launch'));assert.ok(visible.includes('仅用于备稿的完整资料正文'));
  }finally{await vite.close()}
 });
+
+test('split proportions and media side survive HTML rendering while the source video remains playable',async()=>{
+ const vite=await createServer({server:{middlewareMode:true,hmr:false,watch:null},appType:'custom'});
+ try{const{Scene}=await vite.ssrLoadModule('/app/Scene.tsx');const s={...initial.slides[0],content:{kind:'visual',goal:'解释画面',summary:'',presentation:{layout:'balanced',textShare:60,mediaSide:'left'},items:[{id:'copy',title:'说明',body:'保留完整解释',detail:''},{id:'video',title:'',body:'',detail:'',media:'/media/sample.mp4'}]}};
+ const html=renderToStaticMarkup(React.createElement(Scene,{s}));assert.match(html,/split-media-left/);assert.match(html,/grid-template-columns:minmax\(0,40fr\) minmax\(0,60fr\)/);assert.match(html,/<video/);assert.match(html,/sample\.mp4/);assert.match(html,/保留完整解释/);
+ }finally{await vite.close()}
+});

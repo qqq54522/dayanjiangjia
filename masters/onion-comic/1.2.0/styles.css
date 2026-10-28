@@ -269,6 +269,8 @@
 .content-layout-text .content-body{font-size:2.7cqw}
 .content-layout-balanced .content-item:not(:first-of-type):not(:has(.content-body,.content-value)) h2,.content-layout-text .content-item:not(:first-of-type):not(:has(.content-body,.content-value)) h2{padding:1.1cqw 1.4cqw;border-radius:.6cqw;background:repeating-linear-gradient(125deg,transparent 0,transparent 70%,#ffffff10 70%,#ffffff10 74%,transparent 74%,transparent 80%,#ffffff0a 80%),var(--ink);color:white;box-shadow:.2cqw .3cqw #cad7dd}
 .content-split-media{position:relative;min-width:0;min-height:0}
+.scene.split-media-left .content-items{grid-column:2;grid-row:1}
+.scene.split-media-left .content-split-media{grid-column:1;grid-row:1}
 .semantic-scene.content-point:not(.comic-chapter) .content-item h2{font-size:4.7cqw}
 .semantic-scene.content-point:not(.comic-chapter) .content-body{font-size:3cqw}
 .semantic-scene.comic-chapter .comic-opening{inset:24% 4% 7%;padding:0;justify-content:center}

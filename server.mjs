@@ -52,11 +52,12 @@ const server=http.createServer(async(req,res)=>{try{
   if(action==='cancel')return send(res,200,supplements.cancel(id));
   return send(res,404,{error:'补页操作不存在'});
  }
- const refMatch=/^\/api\/references\/([a-f0-9-]{36})(?:\/(generate|generate-all|retry|version))?$/.exec(url.pathname);
+ const refMatch=/^\/api\/references\/([a-f0-9-]{36})(?:\/(generate|generate-all|revise|retry|version))?$/.exec(url.pathname);
  if(refMatch){const [,id,action]=refMatch;
   if(req.method==='GET')return send(res,200,conversions.read(id));
   const b=await body(req);
   if(req.method!=='POST'&&action)return send(res,405,{error:'请使用 POST 提交转换操作'});
+  if(action==='revise')return send(res,202,conversions.revise(id,b.groupId,b,codex.status().settings));
   if(action==='generate-all')return send(res,202,conversions.generateAll(id,codex.status().settings,b.groupIds));
   if(action==='generate')return send(res,202,conversions.generate(id,b.groupId,codex.status().settings));
   if(action==='retry')return send(res,202,conversions.retry(id));
