@@ -42,6 +42,18 @@ test('media frame must fit, while an intentionally cropped source image is not m
  assert.match(inspectScene(pending)[0],/未能加载/);
 });
 
+test('small media previews ignore rounding gaps and never report hidden zoom controls as content',()=>{
+ const previous=globalThis.getComputedStyle;
+ globalThis.getComputedStyle=()=>({overflowX:'visible',overflowY:'visible'});
+ try{
+  const bounds=rect(0,0,300,169),media=node({className:'scene-media gallery',textContent:'退出放大',getBoundingClientRect:()=>bounds,clientWidth:300,scrollWidth:300,clientHeight:169,scrollHeight:172,matches:selector=>selector.includes('.scene-media')});
+  assert.deepEqual(inspectScene(scene([media],bounds)),[]);
+  media.scrollHeight=178;
+  assert.match(inspectScene(scene([media],bounds))[0],/素材.*裁切或延伸越界/);
+  assert.doesNotMatch(inspectScene(scene([media],bounds))[0],/退出放大/);
+ }finally{if(previous)globalThis.getComputedStyle=previous;else delete globalThis.getComputedStyle}
+});
+
 test('a generated group cannot be accepted before every page has a clean measurement',()=>{
  const slides=[{id:'first'},{id:'second'}];
  assert.equal(reviewReady(slides,{}),false);
