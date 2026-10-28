@@ -7,10 +7,10 @@ export function inspectScene(scene:HTMLElement):string[]{
  const result=new Set<string>(),canvas=scene.getBoundingClientRect();
  if(!canvas.width||!canvas.height)return ['页面尚未完成排版检查'];
  const tolerance=canvas.width/1280*5;
- const frames='.content-item,.content-image-cell,.content-image-stage,.content-split-media,.step-media-stage,.content-items,.content-main,.comic-title,.comic-opening,.cover-opening,.comic-board,.scene-media,.semantic-table-wrap,.semantic-table,.focus-matrix,.focus-matrix table,.focus-matrix th,.focus-matrix td,.matrix-products,.matrix-series,.matrix-footer,.semantic-chart,.semantic-chart-row,.scene';
- const targets='h1,h2,.comic-title>span,.comic-text,.comic-board,.scene-brand,.chapter-ribbon,.content-body,.content-value,.content-summary,.content-lead,.content-item,.content-items,.content-main,.content-image-stage,.content-image-cell,.content-split-media,.step-media-stage,.content-crop,.scene-media,.scene-media img,.scene-media video,.semantic-table-wrap,.semantic-table,.semantic-table th,.semantic-table td,.focus-matrix,.focus-matrix table,.focus-matrix th,.focus-matrix td,.focus-matrix th button,.focus-matrix .matrix-line,.focus-matrix .matrix-product,.focus-matrix .matrix-series-card,.focus-matrix .matrix-footer,.focus-matrix .matrix-footer p,.cover-subtitle';
+ const frames='.relation-node,.relation-diagram,.inline-step-overview,.content-item,.content-image-cell,.content-image-stage,.content-split-media,.step-media-stage,.content-items,.content-main,.comic-title,.comic-opening,.cover-opening,.comic-board,.scene-media,.semantic-table-wrap,.semantic-table,.focus-matrix,.focus-matrix table,.focus-matrix th,.focus-matrix td,.matrix-products,.matrix-series,.matrix-footer,.semantic-chart,.semantic-chart-row,.scene';
+ const targets='.relation-node,.relation-diagram,.relation-cycle-summary,h1,h2,.comic-title>span,.comic-text,.comic-board,.scene-brand,.chapter-ribbon,.content-body,.content-value,.content-summary,.content-lead,.content-item,.content-items,.content-main,.content-image-stage,.content-image-cell,.content-split-media,.step-media-stage,.content-crop,.scene-media,.scene-media img,.scene-media video,.semantic-table-wrap,.semantic-table,.semantic-table th,.semantic-table td,.focus-matrix,.focus-matrix table,.focus-matrix th,.focus-matrix td,.focus-matrix th button,.focus-matrix .matrix-line,.focus-matrix .matrix-product,.focus-matrix .matrix-series-card,.focus-matrix .matrix-footer,.focus-matrix .matrix-footer p,.cover-subtitle';
  for(const el of scene.querySelectorAll<HTMLElement>(targets)){
-  if(el.closest('dialog,[hidden]')||!el.getClientRects().length)continue;
+  if(el.closest('dialog,[hidden],[inert],[aria-hidden="true"]')||!el.getClientRects().length)continue;
   const r=el.getBoundingClientRect();if(!r.width&&!r.height)continue;
   // The chapter heading intentionally tilts beyond its layout wrapper; its frame is the slide.
   const parent=el.matches('.comic-opening h1')?null:el.parentElement?.closest<HTMLElement>(frames);
@@ -26,7 +26,7 @@ export function inspectScene(scene:HTMLElement):string[]{
   if(el.matches('.content-crop')&&r.height<canvas.height*.1)result.add('人物/素材区域过小，请减少同卡片文字或调整布局');
  }
  for(const img of scene.querySelectorAll<HTMLImageElement>('.scene-media img,.content-crop image')){
-  if(img.closest('dialog,[hidden]')||!img.getClientRects().length)continue;
+  if(img.closest('dialog,[hidden],[inert],[aria-hidden="true"]')||!img.getClientRects().length)continue;
   if(img.tagName.toLowerCase()==='img'&&!img.complete)result.add('素材尚未加载完成，正在等待排版检查');
   if(img.tagName.toLowerCase()==='img'&&img.complete&&!img.naturalWidth)result.add('素材未能加载，不能直接采用');
  }

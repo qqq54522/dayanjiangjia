@@ -6,10 +6,11 @@ export const presentationCategories=[
  {id:'cover',label:'封面',hint:'整份演示的第一印象',variants:['cover']},
  {id:'chapter',label:'章节开场',hint:'引入一个新话题',variants:['chapter']},
  {id:'point',label:'观点与重点',hint:'让听众记住一个主张',variants:['point']},
- {id:'media',label:'图文与素材',hint:'围绕画面安排文字',variants:['image','balanced','text']},
+ {id:'media',label:'图文与素材',hint:'围绕画面安排文字',variants:['image','balanced','text','carousel']},
  {id:'collection',label:'列表与卡片',hint:'同一主题的并列内容',variants:['list','cards']},
- {id:'process',label:'流程步骤',hint:'有先后顺序的行动路径',variants:['process']},
- {id:'comparison',label:'对比与数据',hint:'比较差异或对应关系',variants:['compare','chart','table']}
+ {id:'process',label:'流程步骤',hint:'有先后顺序的行动路径',variants:['process','process-cards']},
+ {id:'comparison',label:'对比与数据',hint:'比较差异或对应关系',variants:['compare','chart','table']},
+ {id:'relation',label:'关系与推导',hint:'归纳原因、汇成结论或形成循环',variants:['induction','converge','cycle']}
 ] as const;
 export type CategoryId=typeof presentationCategories[number]['id'];
 export type VariantId=typeof presentationCategories[number]['variants'][number];
@@ -20,12 +21,17 @@ export const presentationVariants:Record<VariantId,{label:string;hint:string;kin
  image:{label:'大图展示',hint:'正文区域留给图片、GIF 或视频',kind:'visual',layout:'image'},
  balanced:{label:'图文并重',hint:'左侧约 1/3 讲解，右侧展示素材',kind:'visual',layout:'balanced'},
  text:{label:'突出文字',hint:'左侧约 3/5 讲解，素材辅助',kind:'visual',layout:'text'},
+ carousel:{label:'多图轮播',hint:'同一块白板逐张展示，支持滑动、放大与可选自动播放',kind:'visual',layout:'carousel'},
  list:{label:'纵向列表',hint:'从上到下讲述同一主题的要点',kind:'cards',layout:'list'},
  cards:{label:'横向卡片',hint:'总览并列的人物、功能或数字',kind:'cards',layout:'cards'},
  process:{label:'顺序步骤',hint:'按先后顺序展示，点按聚焦当前步骤',kind:'process',layout:'auto'},
+ 'process-cards':{label:'带图箭头步骤',hint:'每步保留图文与方向，点按聚焦时仍可见整体路径',kind:'process',layout:'process-cards'},
  compare:{label:'两栏对比',hint:'按相同维度比较两种方案',kind:'compare',layout:'auto'},
  chart:{label:'数值条形图',hint:'用同一量程比较数值，不混用单位',kind:'compare',layout:'chart'},
- table:{label:'简明表格',hint:'说明范围、条件与对应关系',kind:'table',layout:'auto'}
+ table:{label:'简明表格',hint:'说明范围、条件与对应关系',kind:'table',layout:'auto'},
+ induction:{label:'归纳递进',hint:'多个现象，经共同原因归纳到结论',kind:'process',layout:'induction'},
+ converge:{label:'多项汇合',hint:'多个做法共同指向右侧或中心的结果',kind:'process',layout:'converge'},
+ cycle:{label:'循环闭环',hint:'全部环节首尾相接，点按聚焦不隐藏其他模块',kind:'process',layout:'cycle'},
 };
 export function slideVariant(s:Slide):VariantId{
  if(s.content){const c=s.content,l=contentLayout(c);if(l==='spotlight')return 'point';if(l==='media-feature')return 'cards';if(l!=='auto')return l;
@@ -43,5 +49,5 @@ export function applyVariant(s:Slide,variant:VariantId):Slide{
  const content=s.content||contentFromLegacy(s,v.kind);
  const next={...content,kind:v.kind,presentation:{...content.presentation,layout:v.layout,...(variant==='compare'?{columns:2 as const}:{})}};
  if(variant==='table'&&!next.table)next.table={headers:['对象','说明'],rows:next.items.filter(i=>i.placement!=='detail').map(i=>[i.title,i.body])};
- return {...s,content:next,design:undefined};
+ return {...s,content:next,design:undefined,...(variant==='carousel'?{composition:{...s.composition,intent:'visual',sequence:'carousel',fit:s.composition?.fit||'contain',brief:s.composition?.brief||''}}:{})};
 }

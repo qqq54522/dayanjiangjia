@@ -5,7 +5,7 @@ import {initial,validSlide} from '../lib/deck.ts';
 import {styleExamples} from '../lib/templates.ts';
 const variants=Object.keys(presentationVariants);
 test('one taxonomy covers every example and every selectable variant exactly once',()=>{
- assert.equal(presentationCategories.length,7);
+ assert.equal(presentationCategories.length,8);
  assert.deepEqual(presentationCategories.flatMap(c=>c.variants),variants);
  const examples=styleExamples(initial.slides);
  assert.deepEqual(examples.map(slideVariant),variants);

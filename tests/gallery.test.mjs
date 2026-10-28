@@ -5,7 +5,7 @@ function fixture(){
  const images=[{src:'one.gif'},{src:'two.png'},{src:'three.png'}],counts=[{},{}],large={};
  const dialog={open:false,classList:{toggle(){}},addEventListener(){},removeEventListener(){},querySelector:s=>s==='img'?large:null,showModal(){this.open=true},close(){this.open=false}};
  const listeners=new Map();
- const root={querySelectorAll:s=>s.includes('img')?images:counts,querySelector:()=>dialog,addEventListener:(t,f)=>listeners.set(t,f),removeEventListener:t=>listeners.delete(t)};
+ const root={querySelectorAll:s=>s.includes('img')?images:counts,querySelector:s=>s==='dialog'?dialog:null,addEventListener:(t,f)=>listeners.set(t,f),removeEventListener:t=>listeners.delete(t)};
  const clean=initGallery(root);
  const fire=(type,extra={})=>{const e={stopPropagation(){this.stopped=true},preventDefault(){this.prevented=true},...extra};listeners.get(type)?.(e);return e};
  const tap=action=>fire('click',{target:{closest:s=>s==='[data-gallery]'&&action?{dataset:{gallery:action}}:null}});

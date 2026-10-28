@@ -2,7 +2,7 @@ import test from 'node:test';import assert from 'node:assert/strict';import {ini
 function fixture(){const ev=new Map(),dev=new Map();const video=()=>({tagName:'VIDEO',src:'clip.mp4',currentTime:0,muted:true,paused:true,hidden:false,pause(){this.paused=true},play(){this.paused=false;return Promise.resolve()},closest(){return null}});
  const small=video(),big=video(),img={tagName:'IMG',src:'demo.gif',closest(){return null}},large={},collapse={};
  const dialog={open:false,classList:{toggle(){}},querySelector:s=>s==='img'?large:s==='video'?big:collapse,showModal(){this.open=true},close(){this.open=false},addEventListener:(n,f)=>dev.set(n,f),removeEventListener:n=>dev.delete(n)};
- const root={querySelectorAll:s=>s.includes('img')?[small,img]:[],querySelector:()=>dialog,addEventListener:(n,f)=>ev.set(n,f),removeEventListener:n=>ev.delete(n)};
+ const root={querySelectorAll:s=>s.includes('img')?[small,img]:[],querySelector:s=>s==='dialog'?dialog:null,addEventListener:(n,f)=>ev.set(n,f),removeEventListener:n=>ev.delete(n)};
  const cleanup=initGallery(root);const click=action=>ev.get('click')({stopPropagation(){},target:{closest:s=>s==='[data-gallery]'&&action?{dataset:{gallery:action}}:null}});
  return {small,big,dialog,click,cleanup,dev,ev}}
 test('video modal preserves progress, taps do not close it, collapse pauses immediately',()=>{const f=fixture();f.small.currentTime=.5;f.small.muted=false;f.small.paused=false;f.click('open');assert.ok(f.small.paused);assert.equal(f.big.currentTime,.5);assert.equal(f.big.muted,false);f.click();assert.ok(f.dialog.open);f.big.currentTime=.8;f.big.paused=false;f.click('close');assert.ok(f.big.paused);assert.equal(f.small.currentTime,.8);f.cleanup()});

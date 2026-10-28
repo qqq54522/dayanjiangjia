@@ -4,7 +4,7 @@ import {validMediaFrame,type MediaFrame} from './media-frame.ts';
 /** Semantic content stays editable independently of the visual template. */
 export type ContentKind='point'|'visual'|'cards'|'compare'|'process'|'table';
 export type ContentItem={design?:ItemDesign;importance?:'key'|'support';interaction?:'none'|'detail'|'media'|'focus';placement?:'main'|'detail';id:string;title:string;body:string;detail:string;media?:string;mediaAspect?:number;mediaFrame?:MediaFrame;crop?:{x:number;y:number;width:number;height:number};value?:string;sourceIds?:string[]};
-export type ContentPresentation={layout?:'auto'|'cover'|'chapter'|'image'|'balanced'|'text'|'cards'|'list'|'chart'|'spotlight'|'media-feature';subtitle?:'hidden'|'visible';marker?:'auto'|'number'|'none';chapterAlign?:'center';textFit?:'after-edit';textShare?:number;mediaSide?:'left'|'right';columns?:2|3|4|5;evidence?:boolean;interaction?:'guided'|'static'};
+export type ContentPresentation={layout?:'auto'|'cover'|'chapter'|'image'|'balanced'|'text'|'cards'|'list'|'chart'|'spotlight'|'media-feature'|'carousel'|'process-cards'|'induction'|'converge'|'cycle';resultId?:string;bridgeId?:string|null;relationMode?:'right'|'center';autoplay?:boolean;autoplaySeconds?:4|6|8;subtitle?:'hidden'|'visible';marker?:'auto'|'number'|'none';chapterAlign?:'center';textFit?:'after-edit';textShare?:number;mediaSide?:'left'|'right';columns?:2|3|4|5;evidence?:boolean;interaction?:'guided'|'static'};
 export type SlideContent={kind:ContentKind;goal:string;summary:string;items:ContentItem[];presentation?:ContentPresentation;table?:{headers:string[];rows:string[][];focus?:boolean;tagColumns?:number[];seriesColumns?:number[];rowAccents?:boolean;footer?:{label:string;text:string}};lockedItemIds?:string[]};
 export type Chapter={id:string;title:string;visible:boolean;color?:ChapterColor};
 export type SourceLink={purpose?:'content'|'structure';documentId:string;page:number;preview?:string;label:string;extractedText?:string;notes?:string};
@@ -16,7 +16,7 @@ export const contentKinds:readonly [ContentKind,string,string][]=[
 ];
 export const localAsset=(s:unknown):s is string=>typeof s==='string'&&/^\/media\/[\w.-]+$/.test(s);
 const text=(s:unknown,n:number):s is string=>typeof s==='string'&&s.length<=n;
-export function validPresentation(x:unknown):x is ContentPresentation{const p=x as ContentPresentation;return !!p&&(p.layout===undefined||['auto','cover','chapter','image','balanced','text','cards','list','chart','spotlight','media-feature'].includes(p.layout))&&(p.subtitle===undefined||['hidden','visible'].includes(p.subtitle))&&(p.marker===undefined||['auto','number','none'].includes(p.marker))&&(p.chapterAlign===undefined||p.chapterAlign==='center')&&(p.textFit===undefined||p.textFit==='after-edit')&&(p.textShare===undefined||Number.isFinite(p.textShare)&&p.textShare>=20&&p.textShare<=75)&&(p.mediaSide===undefined||['left','right'].includes(p.mediaSide))&&(p.columns===undefined||[2,3,4,5].includes(p.columns))&&(p.evidence===undefined||typeof p.evidence==='boolean')&&(p.interaction===undefined||['guided','static'].includes(p.interaction))}
+export function validPresentation(x:unknown):x is ContentPresentation{const p=x as ContentPresentation;return !!p&&(p.layout===undefined||['auto','cover','chapter','image','balanced','text','cards','list','chart','spotlight','media-feature','carousel','process-cards','induction','converge','cycle'].includes(p.layout))&&(p.resultId===undefined||text(p.resultId,100))&&(p.bridgeId===undefined||p.bridgeId===null||text(p.bridgeId,100))&&(p.relationMode===undefined||['right','center'].includes(p.relationMode))&&(p.autoplay===undefined||typeof p.autoplay==='boolean')&&(p.autoplaySeconds===undefined||[4,6,8].includes(p.autoplaySeconds))&&(p.subtitle===undefined||['hidden','visible'].includes(p.subtitle))&&(p.marker===undefined||['auto','number','none'].includes(p.marker))&&(p.chapterAlign===undefined||p.chapterAlign==='center')&&(p.textFit===undefined||p.textFit==='after-edit')&&(p.textShare===undefined||Number.isFinite(p.textShare)&&p.textShare>=20&&p.textShare<=75)&&(p.mediaSide===undefined||['left','right'].includes(p.mediaSide))&&(p.columns===undefined||[2,3,4,5].includes(p.columns))&&(p.evidence===undefined||typeof p.evidence==='boolean')&&(p.interaction===undefined||['guided','static'].includes(p.interaction))}
 export function contentLayout(c:SlideContent){if(c.presentation?.layout&&c.presentation.layout!=='auto')return c.presentation.layout;if(c.kind==='visual')return 'image';if(c.kind==='point'&&c.presentation?.layout!=='auto'&&c.items.every(i=>!i.title&&!i.body&&!i.media&&!i.value))return 'chapter';return 'auto'}
 export function contentColumns(c:SlideContent){const n=c.items.filter(i=>i.placement!=='detail').length;if(c.presentation?.columns)return c.presentation.columns;if(c.kind==='compare')return 2;return n<=5?Math.max(1,n):3}
 export function hasDetail(i:ContentItem){return i.interaction==='detail'&&!!i.detail.trim()}
@@ -24,9 +24,9 @@ export function hasDetail(i:ContentItem){return i.interaction==='detail'&&!!i.de
 export function prepareGeneratedInteractions(content:SlideContent):SlideContent{
  if(content.presentation?.interaction==='static')return content;
  const layout=contentLayout(content);
- if(['cover','chapter','image','chart','spotlight'].includes(layout))return content;
+ if(['cover','chapter','image','carousel','chart','spotlight'].includes(layout))return content;
  const main=content.items.filter(i=>i.placement!=='detail');
- if(['cards','compare'].includes(content.kind)&&main.length>=2){
+ if((['cards','compare'].includes(content.kind)||['process-cards','induction','converge','cycle'].includes(layout))&&main.length>=2){
   return {...content,presentation:{...content.presentation,interaction:'guided'},items:content.items.map(i=>i.placement==='detail'||hasDetail(i)?i:{...i,interaction:'focus'})};
  }
  if(content.kind==='table'&&content.table&&content.table.rows.length>=2&&content.table.headers.length>=2){
@@ -65,8 +65,8 @@ export function moveContentItem(items:ContentItem[],id:string,beforeId:string){c
 export function contentEditingGroups(c:SlideContent){
  const layout=contentLayout(c),opening=layout==='cover'||layout==='chapter';
  const main=c.items.filter(i=>i.placement!=='detail'),references=c.items.filter(i=>i.placement==='detail');
- const bodyVisible=!opening&&layout!=='image'&&c.kind!=='table';
- return {bodyVisible,opening,body:bodyVisible?main:[],retained:bodyVisible?[]:main.filter(i=>i.title.trim()||i.body.trim()||i.detail.trim()||i.value||i.media),references,media:opening?[]:main,summaryVisible:!opening&&layout!=='image'};
+ const bodyVisible=!opening&&!['image','carousel'].includes(layout)&&c.kind!=='table';
+ return {bodyVisible,opening,body:bodyVisible?main:[],retained:bodyVisible?[]:main.filter(i=>i.title.trim()||i.body.trim()||i.detail.trim()||i.value||i.media),references,media:opening?[]:main,summaryVisible:!opening&&!['image','carousel'].includes(layout)};
 }
 
 /** Only later editor mutations enable overflow fitting; new AI pages keep the master baseline. */

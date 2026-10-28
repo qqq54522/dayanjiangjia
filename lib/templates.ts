@@ -29,7 +29,14 @@ export function styleExamples(source:Slide[]):Slide[]{
  const all=[...classicExamples(source),...examples.map((e,i):Slide=>({id:crypto.randomUUID(),round:1,master:{...DEFAULT_MASTER},theme:'brand',layout:'statement',...e,points:[],media:'',gallery:[],background,note:'母版结构示意。复制后替换内容；可在素材与排版中选择编号、列数与图文布局。',source:'工作台样式示例',chapter:{id:'example-chapter',title:'表达方式',visible:i===0}}))];
  const classic=(layout:Slide['layout'])=>all.find(s=>!s.content&&s.layout===layout)!;
  const semantic=(kind:NonNullable<Slide['content']>['kind'])=>all.find(s=>s.content?.kind===kind)!;
- const sources:Record<VariantId,Slide>={cover:classic('hero'),chapter:classic('hero'),point:semantic('point'),image:classic('media'),balanced:classic('media'),text:classic('media'),list:classic('statement'),cards:semantic('cards'),process:semantic('process'),compare:semantic('compare'),chart:classic('chart'),table:semantic('table')};
+ const sourceMedia=[...new Set(source.flatMap(s=>[s.media,...s.gallery||[],...(s.content?.items.filter(i=>i.placement!=='detail').map(i=>i.media)||[])]).filter((u):u is string=>!!u&&u.startsWith('/media/')))].slice(0,4);
+ const make=(title:string,summary:string,items:NonNullable<Slide['content']>['items']):Slide=>({...semantic('process'),id:crypto.randomUUID(),title,subtitle:'',content:{kind:'process',goal:title,summary,items}});
+ const carouselExample=make('把画面逐张讲清楚','',(sourceMedia.length?sourceMedia:['','','']).map((media,i)=>({...item('画面 '+(i+1)),...media?{media,interaction:'media' as const}:{}})));
+ const stepExample=make('沿着一条路径，逐步讲清','',['观察问题','理解原因','尝试方案','检验结果'].map((t,i)=>({...item(t),...sourceMedia[i]?{media:sourceMedia[i]}:{}})));
+ const inductionExample=make('从几个现象，找到共同原因','',['现象一','现象二','现象三','共同原因','明确结论'].map(t=>item(t)));
+ const convergeExample=make('让几项做法，汇成一个目标','',['做法一','做法二','做法三','共同目标'].map(t=>item(t)));
+ const cycleExample=make('让每次完成，推动下一次改进','持续改进',['发现问题','理解原因','尝试方案','检验结果','形成经验','继续改进'].map(t=>item(t)));
+ const sources:Record<VariantId,Slide>={cover:classic('hero'),chapter:classic('hero'),point:semantic('point'),image:classic('media'),balanced:classic('media'),text:classic('media'),list:classic('statement'),cards:semantic('cards'),process:semantic('process'),compare:semantic('compare'),chart:classic('chart'),table:semantic('table'),carousel:carouselExample,'process-cards':stepExample,induction:inductionExample,converge:convergeExample,cycle:cycleExample};
  return presentationCategories.flatMap(group=>group.variants.map(id=>{
   let base={...sources[id],id:crypto.randomUUID()};
   if(id==='balanced'||id==='text')base={...base,subtitle:'先讲清主张，再用画面说明',points:['一个核心观点','必要的解释','具体的例子']};

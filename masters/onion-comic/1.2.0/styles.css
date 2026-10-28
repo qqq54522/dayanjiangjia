@@ -477,3 +477,45 @@
 .scene.master-v12.content-layout-cover .cover-opening[data-title-density=long] h1{font-size:4.3cqw;line-height:1.28}
 .scene.master-v12.content-layout-cover .cover-subtitle{font-size:2.1cqw;line-height:1.55;color:#e0edf2;border-left:.3cqw solid #1eb2ff;padding-left:1.2cqw;margin:0;max-width:95%;font-weight:400;white-space:pre-wrap}
 .cover-endmark{position:absolute;bottom:7%;left:6%;width:9%;height:.35cqw;background:linear-gradient(to right,#ffd633 70%,transparent 70%,transparent 78%,#1eb2ff 78%,#1eb2ff 92%,transparent 92%,transparent 96%,#fff 96%);transform:skewX(-20deg)}
+.scene.content-layout-carousel .content-main{bottom:4%!important}
+.content-carousel-stage{position:relative;min-height:0}
+.scene .content-carousel-stage>.scene-media{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;padding:.7cqw;border:.18cqw solid #2e2e3a;border-radius:.8cqw;background:white;box-shadow:.4cqw .4cqw #2e2e3a;transform:none}
+.gallery[data-carousel=true] .gallery-frame{overflow:hidden}
+.gallery-track{height:100%;width:100%;display:flex;transition:transform .44s cubic-bezier(.2,.7,.2,1)}
+.gallery-track>.media-item{position:relative;flex:0 0 100%;width:100%;height:100%;min-width:0}
+.gallery[data-carousel=true] .gallery-controls{font-size:1.3cqw;padding:.1cqw 0}
+.inline-step-overview{position:relative;display:flex;min-height:0;flex:1}
+.content-layout-process-cards .content-items{gap:2.2cqw}
+.scene.content-layout-process-cards .content-item{align-items:center;text-align:center;padding:1.3cqw 1cqw;gap:1cqw}
+.content-layout-process-cards .card-heading{display:contents}
+.scene.content-layout-process-cards .content-number{order:0;background:transparent;color:#687078;font-weight:500;font-size:1.3cqw;width:auto;height:auto;align-self:flex-start}
+.scene.content-layout-process-cards .content-item>.scene-media{order:2;width:100%;flex:1;min-height:0}
+.scene.content-layout-process-cards .content-item h2{order:3;font-size:2.2cqw;line-height:1.4}
+.scene.content-layout-process-cards .content-body{order:4;font-size:1.8cqw;line-height:1.4}
+.step-arrow-layer{position:absolute;inset:0;pointer-events:none}
+.step-arrow-layer i{position:absolute;top:50%;transform:translate(-50%,-50%);width:1.7cqw;height:2.3cqw;background:#173747;clip-path:polygon(0 32%,48% 32%,48% 0,100% 50%,48% 100%,48% 68%,0 68%)}
+.scene .relation-diagram{position:relative;flex:1;min-height:0}
+.relation-connections{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.relation-connections>path{fill:none;stroke:#173747;stroke-width:5}
+.relation-connections marker path{fill:#173747;stroke:none}
+.scene .relation-node{position:absolute;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:.7cqw;padding:1.2cqw;text-align:center;background:white;color:#2e2e3a;border:.15cqw solid #2e2e3a;border-radius:.7cqw;box-shadow:.3cqw .3cqw #2e2e3a;min-width:0;min-height:0}
+.scene .relation-node h2{font-size:2.2cqw;font-weight:800;line-height:1.4;margin:0;overflow-wrap:anywhere}
+.scene .relation-node .content-body{font-size:1.6cqw;line-height:1.45;margin:.5cqw 0 0;white-space:pre-wrap}
+.scene .relation-node .content-value{font-size:3.5cqw;line-height:1.3}
+.relation-copy{min-width:0;min-height:0}
+.scene .relation-node>.scene-media{position:relative!important;inset:auto!important;width:100%!important;height:auto!important;flex:1;min-height:0;transform:none;padding:0;border:0;border-radius:.3cqw;background:transparent;box-shadow:none;z-index:2}
+.relation-node>.content-crop{z-index:2}
+.relation-focus-hit{position:absolute;inset:0;width:100%;height:100%;min-height:0;padding:0;border:0;border-radius:inherit;background:transparent!important;cursor:pointer;z-index:1}
+.relation-focus-hit:focus-visible{outline:.3cqw solid #1eb2ff;outline-offset:.3cqw}
+.relation-node:has(.relation-focus-hit[aria-pressed=true]){background:#fff8da;border-color:#b39319}
+.scene .relation-induction .relation-bridge{background:#edf7fc}
+.scene .relation-result{background:#fff5c3}
+.scene .relation-induction .relation-result h2{font-size:2.6cqw}
+.scene .relation-converge:not(.relation-center) .relation-premise{flex-direction:row;text-align:left;justify-content:space-between}
+.scene .relation-converge:not(.relation-center) .relation-premise>.relation-copy{flex:1}
+.scene .relation-converge:not(.relation-center) .relation-premise>.scene-media{flex:0 0 27%;height:100%!important}
+.scene .relation-converge .relation-result h2{font-size:3cqw}
+.relation-cycle-summary{position:absolute;left:34%;top:33%;width:32%;height:34%;display:flex;align-items:center;justify-content:center;text-align:center;white-space:pre-wrap;font-size:3.1cqw;font-weight:900;line-height:1.5;color:#173747}
+@media(prefers-reduced-motion:reduce){.gallery-track{transition:none}}
+
+.relation-detail-open{position:absolute;bottom:.4cqw;right:.5cqw;z-index:3;border:1px solid #ccd4d8;background:white;font-size:1.2cqw;padding:.2cqw .5cqw;border-radius:.3cqw;color:#173747}

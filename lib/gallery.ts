@@ -4,6 +4,13 @@ export function initGallery(root: HTMLElement) {
   const dialog = root.querySelector<HTMLDialogElement>('dialog')!;
   const enlarged = dialog.querySelector<HTMLImageElement>('img')!;
   const enlargedVideo = dialog.querySelector<HTMLVideoElement>('video');
+  const track=root.dataset?.carousel==='true'?root.querySelector<HTMLElement>('.gallery-track'):null;
+  const playButton=root.querySelector<HTMLElement>('[data-gallery="play"]');
+  const scene=root.closest?.<HTMLElement>('.scene');
+  const doc=root.ownerDocument||(typeof document==='undefined'?undefined:document);
+  const seconds=[4,6,8].includes(Number(root.dataset?.gallerySeconds))?Number(root.dataset.gallerySeconds):6;
+  let ticker:ReturnType<typeof setInterval>|undefined,visible=true,automatic=root.dataset?.galleryAutoplay==='true';
+  const stopAuto=()=>{if(ticker)clearInterval(ticker);ticker=undefined;playButton?.setAttribute('aria-pressed','false');if(playButton)playButton.textContent='自动播放'};
   const isVideo = (el: Element) => el.tagName === 'VIDEO';
   const pause = () => images.forEach(el=>{if(isVideo(el))(el as HTMLVideoElement).pause()});
   const syncModal = () => {
@@ -18,13 +25,17 @@ export function initGallery(root: HTMLElement) {
   let index = 0;
   let start: {x:number;y:number}|null = null;
   let suppressClickUntil = 0;
-  const show = (delta: number) => {
+  const show = (delta: number,manual=true) => {
+    if(manual){automatic=false;stopAuto()}
     pause();enlargedVideo?.pause();
     index = (index + delta + images.length) % images.length;
-    images.forEach((img, i) => {img.hidden = i !== index;const item=img.closest?.<HTMLElement>('.media-item');if(item)item.hidden=i!==index});
+    images.forEach((img, i) => {img.hidden = !track&&i !== index;const item=img.closest?.<HTMLElement>('.media-item');if(item){item.hidden=!track&&i!==index;item.inert=i!==index;item.setAttribute('aria-hidden',String(i!==index))}});
+    if(track)track.style.transform=`translateX(-${index*100}%)`;
     root.querySelectorAll('.gallery-count').forEach(el => el.textContent = `${index + 1} / ${images.length}`);
     if (dialog.open) syncModal();
+    if(isVideo(images[index]))stopAuto();
   };
+  const startAuto=()=>{stopAuto();if(images.length<2||!visible||doc?.hidden||dialog.open||isVideo(images[index]))return;playButton?.setAttribute('aria-pressed','true');if(playButton)playButton.textContent='暂停播放';ticker=setInterval(()=>{if(!visible||doc?.hidden||dialog.open){stopAuto();return}show(1,false)},seconds*1000)};
   const click = (event: Event) => {
     event.stopPropagation();
     if (Date.now() < suppressClickUntil) { event.preventDefault(); return; }
@@ -34,14 +45,15 @@ export function initGallery(root: HTMLElement) {
       return;
     }
     const action = button.dataset.gallery;
-    if (action === 'open') { pause();syncModal();dialog.showModal(); }
+    if (action === 'open') { automatic=false;stopAuto();pause();syncModal();dialog.showModal(); }
     if (action === 'replay'&&isVideo(images[index])) {const v=images[index] as HTMLVideoElement;v.currentTime=0;v.play().catch(()=>{});}
     if (action === 'close') {closeVideo();dialog.close();}
     if (action === 'prev') show(-1);
     if (action === 'next') show(1);
+    if (action === 'play') {if(ticker){automatic=false;stopAuto()}else{automatic=true;startAuto()}}
   };
   let lastTap={time:0,x:0,y:0},lastToggle=0;
-  const toggleVideo=(e:Event)=>{if(!(e.target as Element)?.closest?.('video'))return;e.stopPropagation();e.preventDefault();if(Date.now()-lastToggle<450)return;lastToggle=Date.now();if(dialog.open){closeVideo();dialog.close()}else{pause();syncModal();dialog.showModal()}};
+  const toggleVideo=(e:Event)=>{if(!(e.target as Element)?.closest?.('video'))return;e.stopPropagation();e.preventDefault();automatic=false;stopAuto();if(Date.now()-lastToggle<450)return;lastToggle=Date.now();if(dialog.open){closeVideo();dialog.close()}else{pause();syncModal();dialog.showModal()}};
   let touchDown:{x:number;y:number}|null=null;
   const videoDown=(e:PointerEvent)=>{if(e.pointerType==='touch'&&(e.target as Element)?.closest?.('video'))touchDown={x:e.clientX,y:e.clientY};else touchDown=null;};
   const videoUp=(e:PointerEvent)=>{if(!touchDown||e.pointerType!=='touch')return;const moved=Math.hypot(e.clientX-touchDown.x,e.clientY-touchDown.y);touchDown=null;if(moved>12){lastTap.time=0;return}const now=Date.now();if(now-lastTap.time<350&&Math.hypot(e.clientX-lastTap.x,e.clientY-lastTap.y)<30){toggleVideo(e);lastTap.time=0}else lastTap={time:now,x:e.clientX,y:e.clientY};};
@@ -91,11 +103,17 @@ export function initGallery(root: HTMLElement) {
   const closeVideo=()=>{if(enlargedVideo&&!enlargedVideo.hidden){const v=images[index] as HTMLVideoElement;v.currentTime=enlargedVideo.currentTime;v.muted=enlargedVideo.muted;enlargedVideo.pause();}};
   const onError=(e:Event)=>{const msg=(e.target as Element).parentElement?.querySelector<HTMLElement>('.video-error');if(msg)msg.hidden=false;};
   // Native controls may dispatch a queued play event after a fast tap on Close.
-  const onPlay=(e:Event)=>{const v=e.target as HTMLVideoElement;const enclosing=v.closest?.<HTMLDialogElement>('dialog');if(enclosing&&!enclosing.open){v.pause();return;}if(v===enlargedVideo?!dialog.open:!!v.closest<HTMLElement>('.media-item')?.hidden)v.pause();};
+  const onPlay=(e:Event)=>{stopAuto();const v=e.target as HTMLVideoElement;const enclosing=v.closest?.<HTMLDialogElement>('dialog');if(enclosing&&!enclosing.open){v.pause();return;}if(v===enlargedVideo?!dialog.open:images[index]!==v)v.pause();};
   root.addEventListener('error',onError,true);
   root.addEventListener('play',onPlay,true);
   dialog.addEventListener('close',closeVideo);
   dialog.addEventListener('cancel',closeVideo);
-  show(0);
-  return () => { root.removeEventListener('dblclick',toggleVideo,true);root.removeEventListener('pointerdown',videoDown);root.removeEventListener('pointerup',videoUp);root.removeEventListener('pointercancel',videoCancel);pause();enlargedVideo?.pause();dialog.close();dialog.removeEventListener('close',closeVideo);dialog.removeEventListener('cancel',closeVideo);root.removeEventListener('play',onPlay,true);root.removeEventListener('error',onError,true);root.removeEventListener('click', click); root.removeEventListener('keydown', keys); root.removeEventListener('touchstart', begin); root.removeEventListener('touchmove', move); root.removeEventListener('touchend', end); root.removeEventListener('touchcancel', cancel); };
+  const visibility=()=>{if(doc?.hidden){automatic=false;stopAuto()}};
+  const leave=()=>{automatic=false;stopAuto();pause()};
+  const reset=()=>{show(-index,false);automatic=root.dataset?.galleryAutoplay==='true';if(automatic)startAuto()};
+  let observer:IntersectionObserver|undefined;
+  if(typeof IntersectionObserver!=='undefined'){visible=false;observer=new IntersectionObserver(entries=>{visible=entries[0]?.isIntersecting||false;if(!visible)stopAuto();else if(automatic)startAuto()},{threshold:.1});observer.observe(root)}
+  doc?.addEventListener('visibilitychange',visibility);scene?.addEventListener('presentation-leave',leave);scene?.addEventListener('presentation-reset',reset);
+  show(0,false);if(automatic)startAuto();
+  return () => { stopAuto();observer?.disconnect();doc?.removeEventListener('visibilitychange',visibility);scene?.removeEventListener('presentation-leave',leave);scene?.removeEventListener('presentation-reset',reset);root.removeEventListener('dblclick',toggleVideo,true);root.removeEventListener('pointerdown',videoDown);root.removeEventListener('pointerup',videoUp);root.removeEventListener('pointercancel',videoCancel);pause();enlargedVideo?.pause();dialog.close();dialog.removeEventListener('close',closeVideo);dialog.removeEventListener('cancel',closeVideo);root.removeEventListener('play',onPlay,true);root.removeEventListener('error',onError,true);root.removeEventListener('click', click); root.removeEventListener('keydown', keys); root.removeEventListener('touchstart', begin); root.removeEventListener('touchmove', move); root.removeEventListener('touchend', end); root.removeEventListener('touchcancel', cancel); };
 }

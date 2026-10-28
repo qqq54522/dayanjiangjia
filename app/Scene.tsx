@@ -15,14 +15,16 @@ import {chartPoint} from '../lib/templates';
 import ContentScene from './ContentScene';
 export function Gallery({s,interactive,frames=[]}:{s:Slide;interactive:boolean;frames?:Array<MediaFrame|undefined>}) {
  const urls=[s.media,...(s.gallery||[])].filter(Boolean);
+ const sliding=s.content?.presentation?.layout==='carousel',playback=s.content?.presentation||s.composition;
  const ref=useRef<HTMLDivElement>(null);
- useEffect(()=>{if(interactive&&ref.current&&urls.length)return initGallery(ref.current)},[interactive,JSON.stringify(urls)]);
+ useEffect(()=>{if(interactive&&ref.current&&urls.length)return initGallery(ref.current)},[interactive,JSON.stringify(urls),sliding,playback?.autoplay,playback?.autoplaySeconds]);
  if(!urls.length)return null;
  const video=(u:string)=>/\.mp4(?:[?#]|$)/i.test(u)||u.startsWith('data:video/');
  if(!interactive)return <div className="scene-media">{video(urls[0])?<video className="video-thumbnail" src={urls[0]} muted playsInline preload="auto" onLoadedMetadata={e=>{e.currentTarget.currentTime=Math.min(.1,e.currentTarget.duration/2||0)}}/>:<img style={frameStyle(frames[0])} src={urls[0]} alt={s.subtitle}/>}</div>;
- return <div className="scene-media gallery" ref={ref}>
- <div className="gallery-frame">{urls.map((u,i)=><div className="media-item" key={i} hidden={i!==0}>{video(u)?<><video src={u} controls controlsList="nofullscreen nodownload noremoteplayback" disablePictureInPicture playsInline muted preload="metadata" aria-label={s.subtitle+' 视频'}/><div className="video-actions"><button type="button" data-gallery="open" aria-label="放大播放视频">放大播放</button></div><span className="video-error" hidden>视频无法播放，请使用 H.264 / AAC 编码的 MP4。</span></>:<button className="image-open" data-gallery="open" aria-label="放大查看图片或动画"><img style={frameStyle(frames[i])} src={u} alt={s.subtitle+' · '+(i+1)}/></button>}</div>)}</div>
- {urls.length>1&&<div className="gallery-controls"><button data-gallery="prev" aria-label="上一张图片">‹ 上一张</button><span className="gallery-count">1 / {urls.length}</span><button data-gallery="next" aria-label="下一张图片">下一张 ›</button></div>}
+ const items=urls.map((u,i)=><div className="media-item" key={i} hidden={!sliding&&i!==0}>{video(u)?<><video src={u} controls controlsList="nofullscreen nodownload noremoteplayback" disablePictureInPicture playsInline muted preload="metadata" aria-label={s.subtitle+' 视频'}/><div className="video-actions"><button type="button" data-gallery="open" aria-label="放大播放视频">放大播放</button></div><span className="video-error" hidden>视频无法播放，请使用 H.264 / AAC 编码的 MP4。</span></>:<button className="image-open" data-gallery="open" aria-label="放大查看图片或动画"><img style={frameStyle(frames[i])} src={u} alt={s.subtitle+' · '+(i+1)}/></button>}</div>);
+ return <div className="scene-media gallery" ref={ref} data-carousel={sliding?'true':undefined} data-gallery-autoplay={playback?.autoplay?'true':undefined} data-gallery-seconds={playback?.autoplaySeconds||6}>
+ <div className="gallery-frame">{sliding?<div className="gallery-track">{items}</div>:items}</div>
+ {urls.length>1&&<div className="gallery-controls"><button data-gallery="prev" aria-label="上一张图片">‹ 上一张</button><span className="gallery-count" aria-live="polite">1 / {urls.length}</span><button data-gallery="next" aria-label="下一张图片">下一张 ›</button><button data-gallery="play" aria-pressed="false">自动播放</button></div>}
  <dialog className="media-lightbox" aria-label="放大查看"><img alt={s.subtitle}/><video hidden controls controlsList="nofullscreen nodownload noremoteplayback" disablePictureInPicture playsInline muted preload="metadata" aria-label="放大视频"/><button className="video-collapse" data-gallery="close" hidden>退出放大</button><div className="lightbox-brand"><img src={brandLogoWhite} alt="洋葱学园"/></div>{urls.length>1&&<div className="gallery-controls"><button data-gallery="prev">‹ 上一张</button><span className="gallery-count">1 / {urls.length}</span><button data-gallery="next">下一张 ›</button></div>}</dialog>
  </div>;
 }
