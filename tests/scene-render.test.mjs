@@ -26,6 +26,20 @@ test('mixed metric and media cards do not add a lone sequence number',async()=>{
  }finally{await vite.close()}
 });
 
+test('balanced split cards keep only text panels on the left and the GIF on the right',async()=>{
+ const vite=await createServer({server:{middlewareMode:true,hmr:false,watch:null},appType:'custom'});
+ try{const{Scene}=await vite.ssrLoadModule('/app/Scene.tsx');
+  for(const count of [2,3]){
+   const s={...initial.slides[0],content:{kind:'cards',goal:'产品演示',summary:'',presentation:{layout:'balanced',mediaSide:'right',marker:'none'},items:[...Array.from({length:count},(_,i)=>({id:`point-${i}`,title:`要点${i+1}`,body:'简要说明',detail:'完整内容'})),{id:'demo',title:'',body:'',detail:'',media:'/media/demo.gif',interaction:'media'}]}};
+   const h=renderToStaticMarkup(React.createElement(Scene,{s}));
+   assert.match(h,/content-cards content-layout-balanced/);
+   assert.equal((h.match(/class="content-item(?:\s|")/g)||[]).length,count);
+   assert.match(h,/class="content-split-media"/);
+   assert.match(h,/\/media\/demo.gif/);
+  }
+ }finally{await vite.close()}
+});
+
 test('style gallery renders every classic and semantic example and enforces actual capacity',async()=>{
  const vite=await createServer({server:{middlewareMode:true,hmr:false,watch:null},appType:'custom'});
  try{const{default:StyleSamples}=await vite.ssrLoadModule('/app/StyleSamples.tsx');const{styleExamples,styleExampleInfo}=await vite.ssrLoadModule('/lib/templates.ts');const source=initial.slides.slice(0,1),examples=styleExamples(source),count=examples.length;

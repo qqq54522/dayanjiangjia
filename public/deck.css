@@ -458,6 +458,13 @@
 
 .scene.master-v12.content-layout-balanced .content-item,.scene.master-v12.content-layout-text .content-item{flex:0 0 auto}
 
+/* Split cards keep each short point in its own equal-height panel beside the media. */
+.scene.master-v12.content-cards.content-layout-balanced .content-items{justify-content:stretch;padding:0;gap:1.2cqw;background:none}
+.scene.master-v12.content-cards.content-layout-balanced .content-items:before{display:none}
+.scene.master-v12.content-cards.content-layout-balanced .content-item{flex:1 1 0;min-height:0;justify-content:center;padding:1.1cqw 1.5cqw!important;background:#fff;border:.15cqw solid var(--ink);border-radius:.8cqw;box-shadow:.3cqw .3cqw var(--ink);gap:.5cqw}
+.scene.master-v12.content-cards.content-layout-balanced .content-item h2{font-size:2.5cqw;line-height:1.18}
+.scene.master-v12.content-cards.content-layout-balanced .content-body{font-size:1.9cqw;line-height:1.25}
+
 .scene.master-v12 .comic-title span{text-wrap:balance}
 
 /* 1.2: a restrained chapter tab joins the top rule; body yellow/blue stay semantic. */
