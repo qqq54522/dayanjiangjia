@@ -18,3 +18,12 @@ test('new parallel cards and tables gain guided focus while explicit static and 
  assert.equal(prepareGeneratedInteractions({...c,items:[c.items[0]]}).items[0].interaction,'none');
  assert.equal(prepareGeneratedInteractions({...c,presentation:{layout:'cover'}}).items[0].interaction,'none');
 });
+
+test('shared design rules distinguish initial large typography from proportional fitting after user edits',()=>{
+ for(const rules of [codexRules,conversionRules]){
+  assert.match(rules,/首次生成使用正常大字号基准/);
+  assert.match(rules,/用户确认后的手动编辑才进入二次适配/);
+  assert.match(rules,/不在上一次缩小的结果上累计缩小/);
+  assert.match(rules,/内部编辑适配标记由编辑器管理/);
+ }
+});

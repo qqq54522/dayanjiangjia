@@ -422,6 +422,8 @@
 .scene.master-v12.semantic-scene.has-chapter .content-main{top:31%}
 .scene.master-v12.semantic-scene.comic-chapter .comic-opening{inset:20% 5% 6%;gap:2cqw}
 .scene.master-v12.semantic-scene.comic-chapter .comic-opening h1{max-height:none;font-size:5.4cqw;line-height:1.28;overflow:visible}
+.scene.master-v12.semantic-scene.comic-chapter.chapter-title-centered .comic-opening{inset:14% 5%;align-items:center;justify-content:center}
+.scene.master-v12.semantic-scene.comic-chapter.chapter-title-centered .comic-opening h1{width:max-content;max-width:90%;flex:0 0 auto}
 .scene.master-v12.semantic-scene .content-value{font-size:5.3cqw;line-height:1.2;word-break:keep-all;overflow-wrap:normal}
 .scene.master-v12.content-layout-balanced .content-value,.scene.master-v12.content-layout-text .content-value{font-size:4.2cqw}
 .scene.master-v12.content-layout-balanced .content-item,.scene.master-v12.content-layout-text .content-item{position:relative;inset:auto;width:auto;transform:none}
@@ -490,16 +492,24 @@
 
 .scene.master-v12 .adaptive-item .content-step:hover,.scene.master-v12 .adaptive-item .content-step:active{background:transparent!important}
 .scene.master-v12.content-process:not(.has-step-media) .adaptive-item[data-density="brief"]{justify-content:center}
-/* Tile copy follows the tile's own width and height as rows/columns change. */
-.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item{container-type:size;padding:.85cqw;gap:.45cqw}
-.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item .card-heading{gap:1cqi}
-.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item .card-heading h2{font-size:min(6cqi,16cqb);line-height:1.2}
-.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item .content-value{font-size:min(11cqi,23cqb);line-height:1.08}
-.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item .content-body{font-size:min(4.7cqi,12cqb);line-height:1.3}
-.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item[data-emphasis=body] .content-body{font-size:min(5.5cqi,14cqb);line-height:1.25}
-.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item .content-number{min-width:0;padding:.5cqi .7cqi;font-size:min(4cqi,10cqb)}
-.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item.with-media>.scene-media{min-height:0}
-.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item[data-media-layout=beside].with-media{gap:.45cqw}
+/* First render uses scene-relative master sizes. Only later editor overflow may scale them. */
+.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item{padding:1.4cqw;gap:.8cqw}
+.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item .card-heading h2{min-width:0;font-size:calc(2.8cqw * var(--card-copy-scale,1));line-height:1.3}
+.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item[data-emphasis=title]:not(.with-media) .card-heading h2{font-size:calc(3.3cqw * var(--card-copy-scale,1))}
+.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item[data-emphasis=body] .card-heading h2{font-size:calc(2.1cqw * var(--card-copy-scale,1))}
+.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item .content-value{font-size:calc(5.8cqw * var(--card-copy-scale,1));line-height:1.15}
+.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item .content-body{font-size:calc(2.2cqw * var(--card-copy-scale,1));line-height:1.5}
+.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item[data-emphasis=body] .content-body{font-size:calc(2.8cqw * var(--card-copy-scale,1));line-height:1.4;font-weight:800}
+.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item[data-density=brief]:not(.with-media){justify-content:center!important}
+.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item .content-number{font-size:calc(1.8cqw * var(--card-copy-scale,1));min-width:0;padding:.55cqw .6cqw}
+.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item.with-media>.scene-media{min-height:8cqw}
+.scene.master-v12.content-layout-media-feature .content-items{grid-template-columns:34% minmax(0,1fr);grid-template-rows:repeat(3,minmax(0,1fr));gap:1.2cqw}
+.scene.master-v12.content-layout-media-feature .content-item:nth-child(-n+3){grid-column:1;padding:1cqw 1.5cqw;gap:.2cqw;justify-content:center}
+.scene.master-v12.content-layout-media-feature .content-item:nth-child(-n+3) .content-value{font-size:3.6cqw;line-height:1.1}
+.scene.master-v12.content-layout-media-feature .content-item:nth-child(-n+3) h2{font-size:2cqw;line-height:1.2}
+.scene.master-v12.content-layout-media-feature .content-item:nth-child(4){grid-column:2;grid-row:1/4;min-height:0;padding:1.4cqw;gap:.8cqw}
+.scene.master-v12.content-layout-media-feature .content-item:nth-child(4) h2{font-size:2.7cqw}
+.scene.master-v12.content-layout-media-feature .content-item:nth-child(4)>.scene-media{flex:1;min-height:0}
 /* Relationship matrix: all content remains visible while the presenter focuses a row or column. */
 .scene.master-v12.has-focus-matrix .content-main{top:24%;bottom:4%;display:block;background:transparent;border:0;box-shadow:none;padding:0}
 .scene.master-v12.has-focus-matrix.has-chapter .content-main{top:28%}
@@ -521,6 +531,22 @@
 .focus-matrix .matrix-footer button{width:11%;flex-shrink:0;font-size:2cqw;background:#2e2e3a!important;color:white!important;text-align:center}
 .focus-matrix .matrix-footer p{margin:0;flex:1;font-size:1.9cqw;font-weight:500;letter-spacing:.05em;text-align:center;color:#2e2e3a}
 @media(prefers-reduced-motion:reduce){.focus-matrix th,.focus-matrix td{transition:none}}
+
+/* Reserve the summary lane and fit matrix tracks before measuring/accepting a suggestion. */
+.scene.master-v12.has-focus-matrix.has-summary .content-main{bottom:16%}
+.focus-matrix{min-height:0}
+.focus-matrix table{display:grid;grid-template-rows:auto minmax(0,1fr);min-height:0;flex:1 1 0}
+.focus-matrix thead{display:block;min-height:0}
+.focus-matrix tbody{display:grid;grid-template-rows:repeat(var(--matrix-rows),minmax(0,1fr));min-height:0}
+.focus-matrix tr{display:grid;grid-template-columns:var(--matrix-columns);min-height:0}
+.focus-matrix th,.focus-matrix td{min-width:0;min-height:0;padding:.7cqw 1cqw}
+.focus-matrix th:first-child,.focus-matrix thead th:nth-child(2){width:auto}
+.focus-matrix button{min-height:0}
+.focus-matrix thead th{padding:.4cqw .7cqw}
+.focus-matrix tbody td{display:flex;flex-direction:column;justify-content:center;align-items:stretch}
+.focus-matrix tbody td>div{width:100%}
+.focus-matrix tbody th{display:flex;align-items:center;justify-content:center}
+.focus-matrix .matrix-footer{flex:0 0 auto}
 
 /* Independent subject/product tiles, consistent across rows. */
 .focus-matrix .matrix-products{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.65cqw .7cqw;align-content:center}

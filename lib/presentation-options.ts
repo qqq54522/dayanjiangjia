@@ -28,7 +28,7 @@ export const presentationVariants:Record<VariantId,{label:string;hint:string;kin
  table:{label:'简明表格',hint:'说明范围、条件与对应关系',kind:'table',layout:'auto'}
 };
 export function slideVariant(s:Slide):VariantId{
- if(s.content){const c=s.content,l=contentLayout(c);if(l==='spotlight')return 'point';if(l!=='auto')return l;
+ if(s.content){const c=s.content,l=contentLayout(c);if(l==='spotlight')return 'point';if(l==='media-feature')return 'cards';if(l!=='auto')return l;
  return ({point:'point',visual:'image',cards:'cards',compare:'compare',process:'process',table:'table'} as const)[c.kind];}
  if(s.media||s.gallery?.length||s.layout==='media'){const i=s.composition?.intent;return i==='text'?'text':i==='balanced'||(i!=='visual'&&(s.subtitle||s.points.length))?'balanced':'image';}
  return ({hero:'chapter',statement:'list',steps:'cards',highlight:'point',chart:'chart',media:'image'} as const)[s.layout];

@@ -5,7 +5,7 @@ import React,{useState,useRef,useEffect} from 'react';
 import ContentMedia from './ContentMedia';
 import ReferenceMaterials from './ReferenceMaterials';
 import type {Slide,Workspace} from '../lib/deck';
-import {contentEditingGroups,contentColumns,moveContentItem,type ContentItem,type ContentPresentation} from '../lib/content';
+import {afterContentEdit,contentEditingGroups,contentColumns,moveContentItem,type ContentItem,type ContentPresentation} from '../lib/content';
 import {presentationCategories,presentationVariants,slideCategory,slideVariant,applyVariant} from '../lib/presentation-options';
 import {reviewSlide} from '../lib/quality';
 import {Plus,Trash2,Lock,Unlock,GripVertical} from 'lucide-react';
@@ -13,7 +13,7 @@ export default function ContentEditor({s,doc,change,tab,onReferences}:{s:Slide;d
  const alive=useRef(true);useEffect(()=>{alive.current=true;return()=>{alive.current=false}},[]);
  const [dragTarget,setDragTarget]=useState('');
  const [error,setError]=useState('');
- const patch=(p:Partial<Slide>)=>change({...doc,slides:doc.slides.map(x=>x.id===s.id?{...x,...p}:x)});
+ const patch=(p:Partial<Slide>)=>change({...doc,slides:doc.slides.map(x=>x.id===s.id?{...x,...p,...p.content?{content:afterContentEdit(s.content,p.content)}:{}}:x)});
  const latest=useRef({doc,s});latest.current={doc,s};
  const c=s.content,category=slideCategory(s),variant=slideVariant(s);
  const groups=c?contentEditingGroups(c):undefined,opening=groups?.opening;

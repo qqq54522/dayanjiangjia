@@ -19,6 +19,12 @@ test('focused media cards expose separate card and media controls in the standal
  }finally{await vite.close()}
 });
 
+test('mixed metric and media cards do not add a lone sequence number',async()=>{
+ const vite=await createServer({server:{middlewareMode:true,hmr:false,watch:null},appType:'custom'});
+ try{const{Scene}=await vite.ssrLoadModule('/app/Scene.tsx');const s={...initial.slides[0],content:{kind:'cards',goal:'覆盖情况',summary:'',presentation:{layout:'cards',columns:2},items:[{id:'a',title:'学校使用',body:'',detail:'',value:'23万+'},{id:'b',title:'学生选择',body:'',detail:'',value:'1.3亿+'},{id:'c',title:'教师推荐',body:'',detail:'',value:'460万+'},{id:'d',title:'央视报道画面',body:'',detail:'',media:'/media/news.png'}]}};const html=()=>renderToStaticMarkup(React.createElement(Scene,{s}));assert.ok(!html().includes('class="content-number"'));s.content.presentation.marker='number';assert.equal((html().match(/class="content-number"/g)||[]).length,4);
+ }finally{await vite.close()}
+});
+
 test('style gallery renders every classic and semantic example and enforces actual capacity',async()=>{
  const vite=await createServer({server:{middlewareMode:true,hmr:false,watch:null},appType:'custom'});
  try{const{default:StyleSamples}=await vite.ssrLoadModule('/app/StyleSamples.tsx');const{styleExamples,styleExampleInfo}=await vite.ssrLoadModule('/lib/templates.ts');const source=initial.slides.slice(0,1),examples=styleExamples(source),count=examples.length;

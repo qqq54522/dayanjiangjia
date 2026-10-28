@@ -4,7 +4,7 @@ import {validMediaFrame,type MediaFrame} from './media-frame.ts';
 /** Semantic content stays editable independently of the visual template. */
 export type ContentKind='point'|'visual'|'cards'|'compare'|'process'|'table';
 export type ContentItem={design?:ItemDesign;importance?:'key'|'support';interaction?:'none'|'detail'|'media'|'focus';placement?:'main'|'detail';id:string;title:string;body:string;detail:string;media?:string;mediaAspect?:number;mediaFrame?:MediaFrame;crop?:{x:number;y:number;width:number;height:number};value?:string;sourceIds?:string[]};
-export type ContentPresentation={layout?:'auto'|'cover'|'chapter'|'image'|'balanced'|'text'|'cards'|'list'|'chart'|'spotlight';subtitle?:'hidden'|'visible';marker?:'auto'|'number'|'none';columns?:2|3|4|5;evidence?:boolean;interaction?:'guided'|'static'};
+export type ContentPresentation={layout?:'auto'|'cover'|'chapter'|'image'|'balanced'|'text'|'cards'|'list'|'chart'|'spotlight'|'media-feature';subtitle?:'hidden'|'visible';marker?:'auto'|'number'|'none';chapterAlign?:'center';textFit?:'after-edit';columns?:2|3|4|5;evidence?:boolean;interaction?:'guided'|'static'};
 export type SlideContent={kind:ContentKind;goal:string;summary:string;items:ContentItem[];presentation?:ContentPresentation;table?:{headers:string[];rows:string[][];focus?:boolean;tagColumns?:number[];seriesColumns?:number[];rowAccents?:boolean;footer?:{label:string;text:string}};lockedItemIds?:string[]};
 export type Chapter={id:string;title:string;visible:boolean;color?:ChapterColor};
 export type SourceLink={purpose?:'content'|'structure';documentId:string;page:number;preview?:string;label:string;extractedText?:string;notes?:string};
@@ -16,7 +16,7 @@ export const contentKinds:readonly [ContentKind,string,string][]=[
 ];
 export const localAsset=(s:unknown):s is string=>typeof s==='string'&&/^\/media\/[\w.-]+$/.test(s);
 const text=(s:unknown,n:number):s is string=>typeof s==='string'&&s.length<=n;
-export function validPresentation(x:unknown):x is ContentPresentation{const p=x as ContentPresentation;return !!p&&(p.layout===undefined||['auto','cover','chapter','image','balanced','text','cards','list','chart','spotlight'].includes(p.layout))&&(p.subtitle===undefined||['hidden','visible'].includes(p.subtitle))&&(p.marker===undefined||['auto','number','none'].includes(p.marker))&&(p.columns===undefined||[2,3,4,5].includes(p.columns))&&(p.evidence===undefined||typeof p.evidence==='boolean')&&(p.interaction===undefined||['guided','static'].includes(p.interaction))}
+export function validPresentation(x:unknown):x is ContentPresentation{const p=x as ContentPresentation;return !!p&&(p.layout===undefined||['auto','cover','chapter','image','balanced','text','cards','list','chart','spotlight','media-feature'].includes(p.layout))&&(p.subtitle===undefined||['hidden','visible'].includes(p.subtitle))&&(p.marker===undefined||['auto','number','none'].includes(p.marker))&&(p.chapterAlign===undefined||p.chapterAlign==='center')&&(p.textFit===undefined||p.textFit==='after-edit')&&(p.columns===undefined||[2,3,4,5].includes(p.columns))&&(p.evidence===undefined||typeof p.evidence==='boolean')&&(p.interaction===undefined||['guided','static'].includes(p.interaction))}
 export function contentLayout(c:SlideContent){if(c.presentation?.layout&&c.presentation.layout!=='auto')return c.presentation.layout;if(c.kind==='visual')return 'image';if(c.kind==='point'&&c.presentation?.layout!=='auto'&&c.items.every(i=>!i.title&&!i.body&&!i.media&&!i.value))return 'chapter';return 'auto'}
 export function contentColumns(c:SlideContent){const n=c.items.filter(i=>i.placement!=='detail').length;if(c.presentation?.columns)return c.presentation.columns;if(c.kind==='compare')return 2;return n<=5?Math.max(1,n):3}
 export function hasDetail(i:ContentItem){return i.interaction==='detail'&&!!i.detail.trim()}
@@ -53,6 +53,7 @@ export function contentFromLegacy(s:{title:string;subtitle:string;points:string[
 }
 export function updateChapter<T extends {chapter?:Chapter}>(slides:T[],chapter:Chapter):T[]{return slides.map(s=>s.chapter?.id===chapter.id?{...s,chapter:{...chapter}}:s)}
 export function preserveLockedItems(before:SlideContent|undefined,after:SlideContent|undefined){
+ if(after&&(after.presentation||before?.presentation?.textFit)){const {textFit,...presentation}=after.presentation||{};after={...after,presentation:{...presentation,...before?.presentation?.textFit?{textFit:before.presentation.textFit}:{}}};}
  if(!before?.lockedItemIds?.length)return after;
  if(!after)throw Error('不能删除包含锁定内容的页面结构');
  for(const id of before.lockedItemIds){if(JSON.stringify(before.items.find(i=>i.id===id))!==JSON.stringify(after.items.find(i=>i.id===id)))throw Error('修改涉及锁定模块，请先解除锁定');}
@@ -66,4 +67,16 @@ export function contentEditingGroups(c:SlideContent){
  const main=c.items.filter(i=>i.placement!=='detail'),references=c.items.filter(i=>i.placement==='detail');
  const bodyVisible=!opening&&layout!=='image'&&c.kind!=='table';
  return {bodyVisible,opening,body:bodyVisible?main:[],retained:bodyVisible?[]:main.filter(i=>i.title.trim()||i.body.trim()||i.detail.trim()||i.value||i.media),references,media:opening?[]:main,summaryVisible:!opening&&layout!=='image'};
+}
+
+/** Only later editor mutations enable overflow fitting; new AI pages keep the master baseline. */
+export function afterContentEdit(before:SlideContent|undefined,after:SlideContent):SlideContent{
+ if(!before||!['cards','compare'].includes(before.kind)||before.kind!==after.kind)return after;
+ const main=(c:SlideContent)=>c.items.filter(i=>i.placement!=='detail');
+ const old=main(before),next=main(after);
+ const added=next.some(i=>!old.some(o=>o.id===i.id));
+ const grew=next.some(i=>{const o=old.find(o=>o.id===i.id);return o&&(i.title!==o.title||i.body!==o.body||i.value!==o.value)});
+ const narrowed=contentColumns(after)>contentColumns(before);
+ if(!added&&!grew&&!narrowed)return after;
+ return {...after,presentation:{...after.presentation,textFit:'after-edit'}};
 }
