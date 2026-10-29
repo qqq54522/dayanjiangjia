@@ -48,11 +48,12 @@ export function initGallery(root: HTMLElement) {
     if (Date.now() < suppressClickUntil) { event.preventDefault(); return; }
     const button = (event.target as Element).closest<HTMLElement>('[data-gallery]');
     if (!button) {
+      if(dialog.open&&root.dataset?.videoPlayback==='modal'&&isVideo(images[index])&&event.target===dialog){closeVideo();dialog.close();return;}
       if (dialog.open && !isVideo(images[index]) && !(event.target as Element).closest('.gallery-controls')) dialog.close();
       return;
     }
     const action = button.dataset.gallery;
-    if (action === 'open') { automatic=false;stopAuto();pause();syncModal();dialog.showModal(); }
+    if (action === 'open') { automatic=false;stopAuto();pause();syncModal();dialog.showModal();if(root.dataset?.videoPlayback==='modal'&&isVideo(images[index]))enlargedVideo?.play().catch(()=>{}); }
     if (action === 'replay'&&isVideo(images[index])) {const v=images[index] as HTMLVideoElement;v.currentTime=0;v.play().catch(()=>{});}
     if (action === 'close') {closeVideo();dialog.close();}
     if (action === 'prev') show(-1);
