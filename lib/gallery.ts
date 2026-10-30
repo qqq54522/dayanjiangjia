@@ -14,7 +14,22 @@ export function initGallery(root: HTMLElement) {
   const stopAuto=()=>{if(ticker)clearInterval(ticker);ticker=undefined;playButton?.setAttribute('aria-pressed','false');if(playButton)playButton.textContent='自动播放'};
   const isVideo = (el: Element) => el.tagName === 'VIDEO';
   const pause = () => images.forEach(el=>{if(isVideo(el))(el as HTMLVideoElement).pause()});
+  // A fresh object URL gives each GIF opening its own animation decoder, including
+  // portable HTML where the original URL is already a blob without an extension.
+  const gifBlobs=new Map<string,Promise<Blob>>();
+  let imageRequest=0,gifURL:string|undefined;
+  const clearImage=()=>{imageRequest++;if(gifURL){enlarged.removeAttribute?.('src');URL.revokeObjectURL(gifURL);gifURL=undefined}};
+  const restartImage=(current:HTMLImageElement)=>{
+    const src=current.src;
+    if(current.dataset?.restartGif!=='true'&&!/\.gif(?:[?#]|$)|^data:image\/gif[;,]/i.test(src)){enlarged.src=src;return;}
+    enlarged.removeAttribute?.('src');
+    const request=imageRequest;
+    let blob=gifBlobs.get(src);
+    if(!blob){blob=fetch(src).then(r=>{if(!r.ok)throw Error('GIF 加载失败');return r.blob()});gifBlobs.set(src,blob)}
+    blob.then(bytes=>{if(request!==imageRequest||!dialog.open)return;gifURL=URL.createObjectURL(bytes);enlarged.src=gifURL}).catch(()=>{gifBlobs.delete(src);if(request===imageRequest&&dialog.open)enlarged.src=src});
+  };
   const syncModal = () => {
+    clearImage();
     const current=images[index],video=isVideo(current);
     const frame=current.closest?.<HTMLElement>('.media-item');
     const title=frame?.dataset?.galleryTitle||'',body=frame?.dataset?.galleryBody||'';
@@ -26,8 +41,8 @@ export function initGallery(root: HTMLElement) {
     if(enlargedVideo){enlargedVideo.pause();enlargedVideo.hidden=!video;}
     dialog.classList.toggle('showing-video',video);
     const collapse=dialog.querySelector<HTMLElement>('.video-collapse');if(collapse)collapse.hidden=!video;
-    if(video&&enlargedVideo){const v=current as HTMLVideoElement;enlargedVideo.src=v.src;enlargedVideo.currentTime=v.currentTime;enlargedVideo.muted=v.muted;}
-    else enlarged.src=current.src;
+    if(video&&enlargedVideo){const v=current as HTMLVideoElement;enlargedVideo.src=v.src;enlargedVideo.currentTime=0;enlargedVideo.muted=v.muted;}
+    else restartImage(current as HTMLImageElement);
   };
   let index = 0;
   let start: {x:number;y:number}|null = null;
@@ -39,7 +54,7 @@ export function initGallery(root: HTMLElement) {
     images.forEach((img, i) => {img.hidden = !track&&i !== index;const item=img.closest?.<HTMLElement>('.media-item');if(item){item.hidden=!track&&i!==index;item.inert=i!==index;item.setAttribute('aria-hidden',String(i!==index))}});
     if(track)track.style.transform=`translateX(-${index*100}%)`;
     root.querySelectorAll('.gallery-count').forEach(el => el.textContent = `${index + 1} / ${images.length}`);
-    if (dialog.open) syncModal();
+    if (dialog.open) {syncModal();if(isVideo(images[index]))enlargedVideo?.play().catch(()=>{});}
     if(isVideo(images[index]))stopAuto();
   };
   const startAuto=()=>{stopAuto();if(images.length<2||!visible||doc?.hidden||dialog.open||isVideo(images[index]))return;playButton?.setAttribute('aria-pressed','true');if(playButton)playButton.textContent='暂停播放';ticker=setInterval(()=>{if(!visible||doc?.hidden||dialog.open){stopAuto();return}show(1,false)},seconds*1000)};
@@ -48,11 +63,12 @@ export function initGallery(root: HTMLElement) {
     if (Date.now() < suppressClickUntil) { event.preventDefault(); return; }
     const button = (event.target as Element).closest<HTMLElement>('[data-gallery]');
     if (!button) {
+      if(dialog.open&&root.dataset?.videoPlayback==='modal'&&isVideo(images[index])&&event.target===dialog){closeVideo();dialog.close();return;}
       if (dialog.open && !isVideo(images[index]) && !(event.target as Element).closest('.gallery-controls')) dialog.close();
       return;
     }
     const action = button.dataset.gallery;
-    if (action === 'open') { automatic=false;stopAuto();pause();syncModal();dialog.showModal(); }
+    if (action === 'open') openModal();
     if (action === 'replay'&&isVideo(images[index])) {const v=images[index] as HTMLVideoElement;v.currentTime=0;v.play().catch(()=>{});}
     if (action === 'close') {closeVideo();dialog.close();}
     if (action === 'prev') show(-1);
@@ -60,7 +76,8 @@ export function initGallery(root: HTMLElement) {
     if (action === 'play') {if(ticker){automatic=false;stopAuto()}else{automatic=true;startAuto()}}
   };
   let lastTap={time:0,x:0,y:0},lastToggle=0;
-  const toggleVideo=(e:Event)=>{if(!(e.target as Element)?.closest?.('video'))return;e.stopPropagation();e.preventDefault();automatic=false;stopAuto();if(Date.now()-lastToggle<450)return;lastToggle=Date.now();if(dialog.open){closeVideo();dialog.close()}else{pause();syncModal();dialog.showModal()}};
+  const openModal=()=>{automatic=false;stopAuto();pause();syncModal();dialog.showModal();if(isVideo(images[index]))enlargedVideo?.play().catch(()=>{});};
+  const toggleVideo=(e:Event)=>{if(!(e.target as Element)?.closest?.('video'))return;e.stopPropagation();e.preventDefault();automatic=false;stopAuto();if(Date.now()-lastToggle<450)return;lastToggle=Date.now();if(dialog.open){closeVideo();dialog.close()}else openModal()};
   let touchDown:{x:number;y:number}|null=null;
   const videoDown=(e:PointerEvent)=>{if(e.pointerType==='touch'&&(e.target as Element)?.closest?.('video'))touchDown={x:e.clientX,y:e.clientY};else touchDown=null;};
   const videoUp=(e:PointerEvent)=>{if(!touchDown||e.pointerType!=='touch')return;const moved=Math.hypot(e.clientX-touchDown.x,e.clientY-touchDown.y);touchDown=null;if(moved>12){lastTap.time=0;return}const now=Date.now();if(now-lastTap.time<350&&Math.hypot(e.clientX-lastTap.x,e.clientY-lastTap.y)<30){toggleVideo(e);lastTap.time=0}else lastTap={time:now,x:e.clientX,y:e.clientY};};
@@ -124,8 +141,10 @@ export function initGallery(root: HTMLElement) {
   const onPlay=(e:Event)=>{stopAuto();const v=e.target as HTMLVideoElement;const enclosing=v.closest?.<HTMLDialogElement>('dialog');if(enclosing&&!enclosing.open){v.pause();return;}if(v===enlargedVideo?!dialog.open:images[index]!==v)v.pause();};
   root.addEventListener('error',onError,true);
   root.addEventListener('play',onPlay,true);
-  dialog.addEventListener('close',closeVideo);
-  dialog.addEventListener('cancel',closeVideo);
+  const closed=()=>{if(!dialog.open){closeVideo();clearImage()}};
+  const cancelled=()=>{closeVideo();clearImage()};
+  dialog.addEventListener('close',closed);
+  dialog.addEventListener('cancel',cancelled);
   const visibility=()=>{if(doc?.hidden){automatic=false;stopAuto()}};
   const leave=()=>{automatic=false;stopAuto();pause()};
   const reset=()=>{show(-index,false);automatic=root.dataset?.galleryAutoplay==='true';if(automatic)startAuto()};
@@ -133,5 +152,5 @@ export function initGallery(root: HTMLElement) {
   if(typeof IntersectionObserver!=='undefined'){visible=false;observer=new IntersectionObserver(entries=>{visible=entries[0]?.isIntersecting||false;if(!visible)stopAuto();else if(automatic)startAuto()},{threshold:.1});observer.observe(root)}
   doc?.addEventListener('visibilitychange',visibility);scene?.addEventListener('presentation-leave',leave);scene?.addEventListener('presentation-reset',reset);
   show(0,false);if(automatic)startAuto();
-  return () => { stopAuto();observer?.disconnect();dragCancel();root.removeEventListener('pointerdown',dragDown);root.removeEventListener('pointermove',dragMove);root.removeEventListener('pointerup',dragUp);root.removeEventListener('pointercancel',dragCancel);root.removeEventListener('lostpointercapture',dragCancel);root.removeEventListener('wheel',wheel);root.removeEventListener('dragstart',preventDrag);doc?.removeEventListener('visibilitychange',visibility);scene?.removeEventListener('presentation-leave',leave);scene?.removeEventListener('presentation-reset',reset);root.removeEventListener('dblclick',toggleVideo,true);root.removeEventListener('pointerdown',videoDown);root.removeEventListener('pointerup',videoUp);root.removeEventListener('pointercancel',videoCancel);pause();enlargedVideo?.pause();dialog.close();dialog.removeEventListener('close',closeVideo);dialog.removeEventListener('cancel',closeVideo);root.removeEventListener('play',onPlay,true);root.removeEventListener('error',onError,true);root.removeEventListener('click', click); root.removeEventListener('keydown', keys); root.removeEventListener('touchstart', begin); root.removeEventListener('touchmove', move); root.removeEventListener('touchend', end); root.removeEventListener('touchcancel', cancel); };
+  return () => { stopAuto();observer?.disconnect();dragCancel();root.removeEventListener('pointerdown',dragDown);root.removeEventListener('pointermove',dragMove);root.removeEventListener('pointerup',dragUp);root.removeEventListener('pointercancel',dragCancel);root.removeEventListener('lostpointercapture',dragCancel);root.removeEventListener('wheel',wheel);root.removeEventListener('dragstart',preventDrag);doc?.removeEventListener('visibilitychange',visibility);scene?.removeEventListener('presentation-leave',leave);scene?.removeEventListener('presentation-reset',reset);root.removeEventListener('dblclick',toggleVideo,true);root.removeEventListener('pointerdown',videoDown);root.removeEventListener('pointerup',videoUp);root.removeEventListener('pointercancel',videoCancel);pause();enlargedVideo?.pause();dialog.close();clearImage();gifBlobs.clear();dialog.removeEventListener('close',closed);dialog.removeEventListener('cancel',cancelled);root.removeEventListener('play',onPlay,true);root.removeEventListener('error',onError,true);root.removeEventListener('click', click); root.removeEventListener('keydown', keys); root.removeEventListener('touchstart', begin); root.removeEventListener('touchmove', move); root.removeEventListener('touchend', end); root.removeEventListener('touchcancel', cancel); };
 }

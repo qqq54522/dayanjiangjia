@@ -123,6 +123,16 @@
 .lightbox-caption p{font-size:clamp(16px,1.5vw,22px);line-height:1.3;margin-top:6px}
 .lightbox-caption [hidden]{display:none}
 
+/* Opt-in video preview: the frame itself opens playback; no separate action row. */
+.video-open{display:flex;align-items:center;justify-content:center;flex:1;width:100%;height:100%;min-height:0;padding:0;border:0;border-radius:.8cqw;background:transparent;cursor:pointer}
+.video-open:hover{background:transparent}
+.video-open:focus-visible{outline:.3cqw solid var(--onion-brand-blue);outline-offset:.2cqw}
+.media-item .video-open video{flex:0 1 auto;width:100%;height:auto;max-height:100%;object-fit:contain;background:transparent;pointer-events:none}
+
+/* Modal preview mode dismisses on its empty surround; the video keeps native controls. */
+.scene-media .media-lightbox.modal-video-dismiss[open]{display:flex;align-items:center;justify-content:center;padding:32px}
+.scene-media .media-lightbox.modal-video-dismiss>video{flex:0 1 auto;width:auto;height:auto;max-width:100%;max-height:100%;object-fit:contain}
+
 /* Approved comic studio template. Scoped so custom designs and alternate palettes survive. */
 .scene.comic-default{background:#d9f1ff;color:#2e2e3a;isolation:isolate;--live-blue:var(--onion-brand-blue);--live-yellow:#ffd633}
 .comic-backdrop,.comic-dots{position:absolute;inset:0;z-index:-1;pointer-events:none}
@@ -520,14 +530,14 @@
 .scene.master-v12.content-process:not(.has-step-media) .adaptive-item[data-density="brief"]{justify-content:center}
 /* First render uses scene-relative master sizes. Only later editor overflow may scale them. */
 .scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item{padding:1.4cqw;gap:.8cqw}
-.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item .card-heading h2{min-width:0;font-size:calc(2.8cqw * var(--card-copy-scale,1));line-height:1.3}
-.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item[data-emphasis=title]:not(.with-media) .card-heading h2{font-size:calc(3.3cqw * var(--card-copy-scale,1))}
-.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item[data-emphasis=body] .card-heading h2{font-size:calc(2.1cqw * var(--card-copy-scale,1))}
-.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item .content-value{font-size:calc(5.8cqw * var(--card-copy-scale,1));line-height:1.15}
-.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item .content-body{font-size:calc(2.2cqw * var(--card-copy-scale,1));line-height:1.5}
-.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item[data-emphasis=body] .content-body{font-size:calc(2.8cqw * var(--card-copy-scale,1));line-height:1.4;font-weight:800}
+.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item .card-heading h2{min-width:0;font-size:calc(2.8cqw * var(--card-copy-scale,1) * var(--module-text-scale,1));line-height:1.3}
+.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item[data-emphasis=title]:not(.with-media) .card-heading h2{font-size:calc(3.3cqw * var(--card-copy-scale,1) * var(--module-text-scale,1))}
+.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item[data-emphasis=body] .card-heading h2{font-size:calc(2.1cqw * var(--card-copy-scale,1) * var(--module-text-scale,1))}
+.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item .content-value{font-size:calc(5.8cqw * var(--card-copy-scale,1) * var(--module-text-scale,1));line-height:1.15}
+.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item .content-body{font-size:calc(2.2cqw * var(--card-copy-scale,1) * var(--module-text-scale,1));line-height:1.5}
+.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item[data-emphasis=body] .content-body{font-size:calc(2.8cqw * var(--card-copy-scale,1) * var(--module-text-scale,1));line-height:1.4;font-weight:800}
 .scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item[data-density=brief]:not(.with-media){justify-content:center!important}
-.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item .content-number{font-size:calc(1.8cqw * var(--card-copy-scale,1));min-width:0;padding:.55cqw .6cqw}
+.scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item .content-number{font-size:calc(1.8cqw * var(--card-copy-scale,1) * var(--module-text-scale,1));min-width:0;padding:.55cqw .6cqw}
 .scene.master-v12:is(.content-cards,.content-compare):is(.content-layout-cards,.content-layout-auto) .adaptive-item.with-media>.scene-media{min-height:8cqw}
 .scene.master-v12.content-layout-media-feature .content-items{grid-template-columns:34% minmax(0,1fr);grid-template-rows:repeat(3,minmax(0,1fr));gap:1.2cqw}
 .scene.master-v12.content-layout-media-feature .content-item:nth-child(-n+3){grid-column:1;padding:1cqw 1.5cqw;gap:.2cqw;justify-content:center}
@@ -656,3 +666,36 @@
 @media(prefers-reduced-motion:reduce){.gallery-track{transition:none}}
 
 .relation-detail-open{position:absolute;bottom:.4cqw;right:.5cqw;z-index:3;border:1px solid #ccd4d8;background:white;font-size:1.2cqw;padding:.2cqw .5cqw;border-radius:.3cqw;color:#173747}
+
+/* Opt-in split text cards reuse the master's ink panels and white lettering. */
+.scene.master-v12.split-dark-cards:is(.content-layout-balanced,.content-layout-text) .content-items{padding:0;gap:1.2cqw;background:none}
+.scene.master-v12.split-dark-cards:is(.content-layout-balanced,.content-layout-text) .content-items:before{display:none}
+.scene.master-v12.split-dark-cards:is(.content-layout-balanced,.content-layout-text) .content-item{flex:1 1 0;min-height:0;justify-content:center;padding:1.1cqw 1.5cqw!important;background:repeating-linear-gradient(125deg,transparent 0,transparent 70%,#ffffff10 70%,#ffffff10 74%,transparent 74%,transparent 80%,#ffffff0a 80%),var(--ink);color:#fff;border:.15cqw solid var(--ink);border-radius:.6cqw;box-shadow:.2cqw .3cqw #cad7dd;gap:.5cqw}
+.scene.master-v12.split-dark-cards:is(.content-layout-balanced,.content-layout-text) .content-item h2{padding:0;margin:0;font-size:2.7cqw;line-height:1.18;white-space:pre-wrap;background:none;color:inherit;box-shadow:none}
+.scene.master-v12.split-dark-cards:is(.content-layout-balanced,.content-layout-text) .content-body{padding:0;margin:0;color:inherit}
+
+/* Optional white reading panel groups the existing dark text modules. */
+.scene.master-v12.split-dark-panel:is(.content-layout-balanced,.content-layout-text) .content-items{padding:1.6cqw;gap:1.2cqw;background:linear-gradient(155deg,#fff 65%,#eef9ff);border-radius:1.1cqw}
+
+/* Opt-in white split panels reuse the master media frame and focus yellow. */
+.scene.master-v12.split-white-cards:is(.content-layout-balanced,.content-layout-text) .content-items{padding:0;gap:1.2cqw;background:none}
+.scene.master-v12.split-white-cards:is(.content-layout-balanced,.content-layout-text) .content-items:before{display:none}
+.scene.master-v12.split-white-cards:is(.content-layout-balanced,.content-layout-text) .content-item{flex:1 1 0;min-height:0;justify-content:center;padding:2cqw 2.2cqw!important;gap:.6cqw;background:#fff;border:.2cqw solid var(--ink);border-radius:1cqw;box-shadow:.4cqw .4cqw var(--ink)}
+.scene.master-v12.split-white-cards:is(.content-layout-balanced,.content-layout-text) .content-item h2{padding:0;margin:0;font-size:3cqw;line-height:1.25;background:none;box-shadow:none;color:var(--ink)}
+.scene.master-v12.split-white-cards:is(.content-layout-balanced,.content-layout-text) .content-body{padding:0;margin:0;font-size:2.2cqw;line-height:1.4;color:var(--ink)}
+.scene.master-v12.split-white-cards:is(.content-layout-balanced,.content-layout-text) .content-item:has(.content-focus-hit[data-active=true]){background:#fff7ce;border-color:#e1b000;box-shadow:.35cqw .35cqw #e1b000}
+/* Reserve side breathing room around portrait media without stretching its image. */
+.scene.master-v12.split-white-cards .content-main:has(>.split-portrait-media){gap:3.2cqw}
+.scene.master-v12.split-white-cards .content-split-media.split-portrait-media{justify-self:end;align-self:stretch;height:100%;width:auto;aspect-ratio:calc(var(--split-media-aspect) + .19)}
+.scene.master-v12.split-white-cards .split-portrait-media>.scene-media{padding:.8cqw 1.2cqw}
+
+/* Explicit page setting for a centered profile introduction; default layouts are unchanged. */
+.scene.master-v12.profile-text-centered.content-layout-balanced .content-items{justify-content:center;text-align:center}
+.scene.master-v12.profile-text-centered.content-layout-balanced .content-item{width:100%;align-items:center;text-align:center}
+.scene.master-v12.profile-text-centered.content-layout-balanced .content-item h2{font-size:4.2cqw;line-height:1.25;margin:0}
+.scene.master-v12.profile-text-centered.content-layout-balanced .content-body{font-size:2.4cqw;line-height:1.5;margin:0}
+
+/* Keep click emphasis visible across card and split-panel variants. */
+.scene.master-v12.semantic-scene .content-main .content-items .content-item:has(>.content-focus-hit[data-active=true]){background:#fff7ce;border-color:#e1b000;box-shadow:.35cqw .35cqw #e1b000;color:var(--ink)}
+.scene.master-v12.semantic-scene .content-main .content-items .content-item:has(>.content-focus-hit[data-active=true]) :is(h2,.content-body,.content-value){color:var(--ink)}
+.card-detail-open{position:absolute;bottom:.5cqw;right:.6cqw;z-index:3;border:1px solid #ccd4d8;background:white;font:inherit;font-size:1.2cqw;padding:.2cqw .6cqw;border-radius:.3cqw;color:#173747;min-height:0;cursor:pointer}

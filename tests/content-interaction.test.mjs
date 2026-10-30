@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {initContent} from '../lib/content-interaction.ts';
-class Element extends EventTarget{constructor(dataset={}){super();this.dataset=dataset;this.attrs={};this.hidden=false;this.open=false;this.pauses=0}setAttribute(k,v){this.attrs[k]=v}showModal(){this.open=true}close(){this.open=false}pause(){this.pauses++}closest(selector){return this.matches?.[selector]||null}querySelectorAll(){return this.videos||[]}}
+class Element extends EventTarget{constructor(dataset={}){super();this.dataset=dataset;this.attrs={};this.hidden=false;this.open=false;this.pauses=0}setAttribute(k,v){this.attrs[k]=v}getAttribute(k){return this.attrs[k]??null}showModal(){this.open=true}close(){this.open=false}pause(){this.pauses++}closest(selector){return this.matches?.[selector]||null}querySelectorAll(){return this.videos||[]}}
 function setup(){const root=new Element(),steps=[0,1,2].map(i=>new Element({contentStep:String(i)})),stages=steps.map((_,i)=>new Element({stepMedia:String(i)})),dialogs=steps.map(()=>new Element());stages.forEach(x=>x.videos=[new Element()]);root.querySelectorAll=selector=>selector==='[data-content-step]'?steps:selector==='[data-step-media]'?stages:dialogs;root.querySelector=selector=>dialogs[Number(selector.match(/"(\d+)"/)[1])];return {root,steps,stages,dialogs,cleanup:initContent(root)}}
 function fire(root,type,target){const e=new Event(type,{cancelable:true});Object.defineProperty(e,'target',{value:target});root.dispatchEvent(e);return e}
 test('semantic process selects linked media, pauses hidden videos, and resets on page change',()=>{const f=setup(),t=f.steps[2];t.matches={'[data-content-step]':t};fire(f.root,'click',t);assert.deepEqual(f.steps.map(x=>x.dataset.active),['false','false','true']);assert.deepEqual(f.stages.map(x=>x.hidden),[true,true,false]);assert.equal(f.stages[0].videos[0].pauses,1);f.root.dispatchEvent(new Event('presentation-reset'));assert.equal(f.steps[0].attrs['aria-pressed'],'true');assert.deepEqual(f.stages.map(x=>x.hidden),[false,true,true]);f.cleanup();fire(f.root,'click',t);assert.equal(f.steps[0].dataset.active,'true')});
@@ -8,3 +8,17 @@ test('card detail opens, closes via return or backdrop, and is removed on cleanu
 
 test("closing evidence details pauses video on return, native close and page reset",()=>{const f=setup(),d=f.dialogs[0],v=new Element();d.videos=[v];d.showModal();const close=new Element();close.matches={"[data-detail-close]":close,dialog:d};fire(f.root,"click",close);assert.equal(v.pauses,1);d.dispatchEvent(new Event("close"));assert.equal(v.pauses,2);d.showModal();f.root.dispatchEvent(new Event("presentation-reset"));assert.equal(v.pauses,3);f.cleanup();});
 test('keyboard opens a cropped image without triggering its card focus',()=>{const f=setup(),crop=new Element({detailOpen:'1'});crop.tagName='svg';crop.matches={'[data-detail-open]':crop};const e=new Event('keydown',{cancelable:true});Object.defineProperty(e,'key',{value:'Enter'});Object.defineProperty(e,'target',{value:crop});f.root.dispatchEvent(e);assert.equal(f.dialogs[1].open,true);assert.equal(e.defaultPrevented,true);f.cleanup()});
+
+test('card emphasis toggles off, switches cards, and keeps paired step controls in sync',()=>{
+ const f=setup();const hit=new Element({contentStep:'2',overviewFocus:'true'});hit.matches={'[data-content-step]':hit};
+ const query=f.root.querySelectorAll;f.root.querySelectorAll=s=>s==='[data-content-step]'?[...f.steps,hit]:query(s);
+ fire(f.root,'click',hit);assert.equal(hit.attrs['aria-pressed'],'true');assert.equal(f.steps[2].dataset.active,'true');assert.deepEqual(f.stages.map(x=>x.hidden),[true,true,false]);
+ fire(f.root,'click',hit);assert.equal(hit.attrs['aria-pressed'],'false');assert.equal(f.steps[2].dataset.active,'false');assert.deepEqual(f.stages.map(x=>x.hidden),[false,true,true]);
+ fire(f.root,'click',hit);const next=f.steps[1];next.matches={'[data-content-step]':next};fire(f.root,'click',next);assert.equal(hit.dataset.active,'false');assert.equal(next.dataset.active,'true');f.cleanup();
+});
+
+test('keyboard activation of a focus button stays inside the slide instead of advancing standalone playback',()=>{
+ const f=setup(),target=f.steps[0];target.matches={'[data-content-step],[data-relation-focus],[data-matrix-axis]':target};
+ for(const key of [' ','Enter']){const e=new Event('keydown',{cancelable:true});Object.defineProperty(e,'target',{value:target});Object.defineProperty(e,'key',{value:key});let stopped=false;e.stopPropagation=()=>{stopped=true};f.root.dispatchEvent(e);assert.equal(stopped,true);assert.equal(e.defaultPrevented,false);}
+ f.cleanup();
+});

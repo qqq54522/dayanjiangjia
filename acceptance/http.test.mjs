@@ -1,3 +1,4 @@
+import {PLAYER_VERSION} from '../lib/player-version.ts';
 import test from 'node:test';import assert from 'node:assert/strict';import {spawn} from 'node:child_process';import {mkdtempSync,mkdirSync,writeFileSync,rmSync,statSync} from 'node:fs';import {tmpdir} from 'node:os';import path from 'node:path';import net from 'node:net';import {once} from 'node:events';
 import {mp4,gif} from '../tests/fixtures.mjs';import {FONTS} from '../lib/fonts.mjs';import {unzipSync} from 'fflate';
 import {initial} from '../lib/deck.ts';import {MAX_SLIDES,MAX_WORKSPACE_BYTES} from '../lib/limits.ts';
@@ -95,3 +96,23 @@ test('CLI connection settings remain private across HTTP and reject cross-origin
   assert.equal((await fetch(a.base+'/api/cli-connection',{method:'PUT',headers:{'Content-Type':'application/json',Origin:'https://elsewhere.example'},body:'{"mode":"local"}'})).status,403);
  }finally{await a.stop()}
 });
+
+
+test('project clips persist in isolation and travel with ZIP; relay viewers are read-only',async()=>{
+ const a=await start();try{
+ const api=async(url,method='GET',value)=>{const r=await fetch(a.base+url,{method,...value===undefined?{}:{headers:{'Content-Type':'application/json'},body:JSON.stringify(value)}});const v=await r.json();assert.ok(r.ok,JSON.stringify(v));return v;};
+ const one=await api('/api/projects','POST',{title:'Clip project one'}),two=await api('/api/projects','POST',{title:'Clip project two'});
+ const upload=await fetch(a.base+'/api/media',{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:mp4});assert.equal(upload.status,200);const {url}=await upload.json();
+ const w=await api('/api/projects/'+one.id+'/workspace');w.data.clips=[{id:'sample',title:'Sample clip',url,grade:'Junior',subject:'Math'}];
+ await api('/api/projects/'+one.id+'/workspace','PUT',{revision:w.revision,data:w.data});assert.deepEqual((await api('/api/projects/'+one.id+'/workspace')).data.clips,w.data.clips);assert.equal((await api('/api/projects/'+two.id+'/workspace')).data.clips,undefined);
+ const exported=await fetch(a.base+'/api/export?project='+one.id);const zip=unzipSync(new Uint8Array(await exported.arrayBuffer()));assert.deepEqual(Buffer.from(zip['assets/'+url.split('/').pop()]),mp4);
+ assert.deepEqual(await api('/api/playback-config'),{relayUrl:''});await api('/api/playback-config','PUT',{relayUrl:'https://relay.example.test/'});assert.deepEqual(await api('/api/playback-config'),{relayUrl:'https://relay.example.test'});assert.equal((await fetch(a.base+'/api/playback-config',{method:'PUT',headers:{'Content-Type':'application/json',Origin:'https://untrusted.example'},body:'{"relayUrl":""}'})).status,403);
+ const room=await api('/api/presentation/rooms','POST',{}),state={page:1,clipId:'sample',playing:true,presenting:true,time:0,actions:[]};
+ const put=token=>fetch(a.base+'/api/presentation/rooms/'+room.id+'/state',{method:'PUT',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify(state)});assert.equal((await put(room.viewToken)).status,403);assert.equal((await put(room.controlToken)).status,200);
+ const received=await fetch(a.base+'/api/presentation/rooms/'+room.id+'/state',{headers:{Authorization:'Bearer '+room.viewToken}});assert.deepEqual((await received.json()).state,state);
+ }finally{await a.stop()}
+});
+
+test('GIF project clip upload preserves bytes, survives ZIP, and rejects mismatched files',async()=>{const a=await start();try{const result=await fetch(a.base+'/api/project-clips/media?name=sample.GIF',{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:gif});assert.equal(result.status,200);const clip=await result.json();assert.equal(clip.kind,'gif');assert.deepEqual(Buffer.from(await (await fetch(a.base+clip.url)).arrayBuffer()),gif);const w=await (await fetch(a.base+'/api/workspace')).json();w.data.clips=[{...clip,id:'animated',title:'Animated clip'}];assert.equal((await fetch(a.base+'/api/workspace',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:w.data,revision:w.revision})})).status,200);const zip=unzipSync(new Uint8Array(await (await fetch(a.base+'/api/export')).arrayBuffer()));assert.deepEqual(Buffer.from(zip['assets/'+clip.url.split('/').pop()]),gif);assert.equal((await fetch(a.base+'/api/project-clips/media?name=fake.gif',{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:mp4})).status,400);assert.equal((await fetch(a.base+'/api/project-clips/media?name=sample.gif',{method:'POST',headers:{'Content-Type':'application/octet-stream',Origin:'https://untrusted.example'},body:gif})).status,403);}finally{await a.stop()}});
+
+test('publishing rejects a stale loaded workbench before attempting external upload',async()=>{const a=await start();try{writeFileSync(path.join(a.dir,'publish-config.json'),JSON.stringify({gatewayUrl:'https://never-contact.example.test',apiKey:'test-only-key'}));for(const version of [undefined,'old','3',PLAYER_VERSION]){const r=await fetch(a.base+'/api/publish?title=Draft',{method:'POST',headers:{'Content-Type':'text/html',...(version?{'X-Deck-Player-Version':version}:{})},body:'<!doctype html><div data-deck-player><section data-play-index="0"></section></div>'});assert.equal(r.status,409);assert.match((await r.json()).error,/浏览器的刷新按钮/);}const status=await (await fetch(a.base+'/api/publish')).json();assert.equal(status.playerVersion,PLAYER_VERSION);assert.deepEqual(status.publications,[]);}finally{await a.stop()}});

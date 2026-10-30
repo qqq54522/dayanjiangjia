@@ -1,3 +1,7 @@
+import {PLAYER_VERSION} from './lib/player-version.ts';
+import {createClipUploader,MAX_CLIP_UPLOAD_BYTES} from './lib/clip-upload.mjs';
+import {playbackConfig} from './lib/playback-config.mjs';
+import {createPresentationRelay} from './lib/presentation-relay.mjs';
 import {MAX_WORKSPACE_BYTES} from './lib/limits.ts';
 import {installMasters} from './lib/master-resources.mjs';
 import {DEFAULT_MASTER,masterCatalog} from './lib/masters.ts';
@@ -17,12 +21,14 @@ import {pack,unpack,saveMedia} from './lib/transfer.mjs';
 const root=path.dirname(fileURLToPath(import.meta.url));const port=Number(process.env.PORT||8788);const dataDir=path.resolve(process.env.DECK_DATA_DIR||path.join(root,'.local'));
 const fontDir=path.join(dataDir,'fonts');
 const mediaDir=path.join(dataDir,'media');mkdirSync(mediaDir,{recursive:true});const store=openStore(dataDir);
+const uploadClip=createClipUploader(mediaDir);
 const masters=installMasters(mediaDir);
 const defaultBackground=masters.background();
 const workspaceView=id=>{const v=store.read(id);return {...v,data:masters.hydrate(v.data)}};
 const connection=createCliConnection({dir:dataDir});
 const codex=createCodexBridge({dir:dataDir,store,connection});
 const publisher=createPublisher({dir:dataDir});
+const playback=playbackConfig(dataDir),presentationRelay=createPresentationRelay();
 const conversions=createConversions({dir:dataDir,connection,workspace:workspaceView});
 const supplements=createSupplements({dir:dataDir,store,workspace:workspaceView,conversions,connection});
 const updater=createAppUpdater({root,supervised:process.env.DECK_SUPERVISED==='1',onRestart:()=>setTimeout(()=>{codex.close();conversions.close();supplements.close();server.close(()=>{store.close();process.exit(75)})},1000)});
@@ -33,7 +39,10 @@ const server=http.createServer(async(req,res)=>{try{
  const allowed=new Set([`127.0.0.1:${port}`,`localhost:${port}`]);if(!allowed.has(req.headers.host))return send(res,403,{error:'仅允许本机访问'});
  if(req.headers.origin&&!['http://127.0.0.1:'+port,'http://localhost:'+port].includes(req.headers.origin))return send(res,403,{error:'不接受跨站请求'});
  const url=new URL(req.url,'http://127.0.0.1:'+port);
- if(!['GET','HEAD'].includes(req.method)&&!(req.headers['content-type']?.startsWith('application/json')||(['/api/media','/api/import','/api/references'].includes(url.pathname)&&['application/zip','application/octet-stream','video/mp4'].includes(req.headers['content-type']))||(url.pathname==='/api/publish'&&req.headers['content-type']?.startsWith('text/html'))))return send(res,415,{error:'需要 JSON 或受支持的文件类型'});
+ if(!['GET','HEAD'].includes(req.method)&&!(req.headers['content-type']?.startsWith('application/json')||(['/api/media','/api/import','/api/references','/api/project-clips/media'].includes(url.pathname)&&['application/zip','application/octet-stream','video/mp4'].includes(req.headers['content-type']))||(url.pathname==='/api/publish'&&req.headers['content-type']?.startsWith('text/html'))))return send(res,415,{error:'需要 JSON 或受支持的文件类型'});
+ if(url.pathname.startsWith('/api/presentation/'))return presentationRelay(req,res,url.pathname);
+ if(url.pathname==='/api/playback-config'&&req.method==='GET')return send(res,200,playback.read());
+ if(url.pathname==='/api/playback-config'&&req.method==='PUT')return send(res,200,playback.save(await body(req)));
  if(url.pathname==='/api/update'&&req.method==='GET')return send(res,200,await updater.status());
  if(url.pathname==='/api/update'&&req.method==='POST')return send(res,202,await updater.start());
  if(url.pathname==='/api/references'&&req.method==='GET')return send(res,200,conversions.list());
@@ -77,6 +86,7 @@ const server=http.createServer(async(req,res)=>{try{
  if(url.pathname==='/api/publish'&&req.method==='GET'){const id=url.searchParams.get('project');if(id)store.read(id);return send(res,200,publisher.status(id))}
  if(url.pathname==='/api/publish'&&req.method==='POST'){
   if(!req.headers['content-type']?.startsWith('text/html'))return send(res,415,{error:'发布内容必须是 HTML'});
+  if(req.headers['x-deck-player-version']!==PLAYER_VERSION){req.resume();return send(res,409,{error:'当前工作台页面版本过旧。请点击浏览器的刷新按钮，重新加载工作台后再发布；刷新本机稿件不会更新工具代码。'})}
   const id=url.searchParams.get('project')||store.activeId();store.read(id);
   return send(res,201,await publisher.publish(req,{title:url.searchParams.get('title')||'',source:url.searchParams.get('source')||'当前草稿',projectId:id}));
  }
@@ -99,8 +109,9 @@ const server=http.createServer(async(req,res)=>{try{
  if(url.pathname==='/api/workspace'&&req.method==='GET')return send(res,200,workspaceView());
  if(url.pathname==='/api/workspace'&&req.method==='PUT'){const b=await body(req,MAX_WORKSPACE_BYTES);return send(res,200,store.save(masters.hydrate(b.data),b.revision))}
  if(url.pathname==='/api/proposals'&&req.method==='POST')return send(res,200,store.propose(await body(req,MAX_WORKSPACE_BYTES)));
- if(url.pathname==='/api/export'&&req.method==='GET'){let data=workspaceView(url.searchParams.get('project')||undefined).data;const versionId=url.searchParams.get('version');if(versionId!==null){const version=data.versions.find(v=>v.id===versionId);if(!version)return send(res,404,{error:'此演示版本不存在，请刷新版本列表'});data={...data,slides:version.slides,settings:version.settings,comments:version.comments||[],proposals:[],versions:[version]}}const zip=pack(data,mediaDir,fontDir);res.writeHead(200,{'Content-Type':'application/zip','Content-Disposition':'attachment; filename=deck.deck.zip','Cache-Control':'no-store'});return res.end(zip)}
+ if(url.pathname==='/api/export'&&req.method==='GET'){let data=workspaceView(url.searchParams.get('project')||undefined).data;const versionId=url.searchParams.get('version');if(versionId!==null){const version=data.versions.find(v=>v.id===versionId);if(!version)return send(res,404,{error:'此演示版本不存在，请刷新版本列表'});data={...data,slides:version.slides,clips:version.clips??data.clips,settings:version.settings,comments:version.comments||[],proposals:[],versions:[version]}}const zip=pack(data,mediaDir,fontDir);res.writeHead(200,{'Content-Type':'application/zip','Content-Disposition':'attachment; filename=deck.deck.zip','Cache-Control':'no-store'});return res.end(zip)}
  if(url.pathname==='/api/import'&&req.method==='POST')return send(res,200,{data:masters.hydrate(unpack(await raw(req),mediaDir,fontDir))});
+ if(url.pathname==='/api/project-clips/media'&&req.method==='POST')return send(res,200,await uploadClip(await raw(req,MAX_CLIP_UPLOAD_BYTES),url.searchParams.get('name')||''));
  if(url.pathname==='/api/media'&&req.method==='POST'){return send(res,200,{url:saveMedia(mediaDir,await raw(req))})}
  if(url.pathname.startsWith('/api/'))return send(res,404,{error:'未找到接口'});
  if(!['GET','HEAD'].includes(req.method))return send(res,405,{error:'不支持此操作'});

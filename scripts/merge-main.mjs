@@ -3,7 +3,7 @@ const git=(...args)=>execFileSync('git',args,{encoding:'utf8'}).trim();
 if(git('status','--porcelain'))throw Error('工作区有未提交修改，请先保存；不会覆盖');
 const branch=git('branch','--show-current');
 if(!branch.startsWith('codex/'))throw Error('请在已验证的 codex/ 功能分支执行');
-if(git('remote','get-url','origin')!=='git@gitlab.yc345.tv:linfeng/onion-deck-studio.git')throw Error('仓库地址不符合预期');
+if(!/^(?:https:\/\/github\.com\/|ssh:\/\/git@github\.com\/|git@github\.com:|git@github-dayanjiangjia:)qqq54522\/dayanjiangjia(?:\.git)?\/?$/i.test(git('remote','get-url','origin')))throw Error('仓库地址不符合预期：仅同步到 qqq54522/dayanjiangjia 的 GitHub main');
 const head=git('rev-parse','HEAD');
 git('fetch','origin','main');
 if(spawnSync('git',['merge-base','--is-ancestor','origin/main',head]).status!==0)throw Error('main 已有其他更新。请让 Codex 合并最新 main、处理冲突并重新测试，再同步；不会强推');
